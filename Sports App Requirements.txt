@@ -1,0 +1,167 @@
+# GameFund Manager - Mobile App Requirements (React Native)
+
+## Objective
+
+A cross-platform mobile app (iOS + Android) to manage sports group contributions, expenses, polls, and communication for games like Badminton and Cricket.
+
+## Technology Stack
+
+* React Native
+* UI: TailwindCSS (NativeWind), shadcn/ui
+* State Management: Redux Toolkit or Zustand
+* Backend: ASP.NET Core (C#)
+* Database: SQL Server
+* Authentication: Custom JWT-based auth (ASP.NET Core Identity)
+* Storage: AWS S3 or Azure Blob Storage (for media)
+* Notifications: Firebase Cloud Messaging (FCM)
+
+## Core Modules & Features
+
+### 1. User Management
+
+* Roles: Player, Admin
+* Features:
+
+  * Registration/Login (Email/Phone, Google/Apple optional)
+  * Profile management (name, photo, contact, games joined)
+  * Admin panel for managing users
+
+### 2. Group Management
+
+* Create/manage groups (Badminton, Cricket)
+* Players can join multiple groups
+* Each group has:
+
+  * Members list
+  * Contributions
+  * Expenses
+  * Polls
+  * Chat & Media
+
+### 3. Contribution Tracking
+
+* Monthly contributions per player per group
+* Features:
+
+  * Mark contributions (Paid/Pending/Adjusted)
+  * Player view of status
+  * Contribution reminders (push notifications)
+
+### 4. Expense Tracking
+
+* Log expenses (equipment, ground fees)
+* Features:
+
+  * Item name, amount, purchased by, date, notes
+  * Auto-adjust contributions when a player purchases
+  * Transparent ledger per group
+
+### 5. Reporting & Summary
+
+* Features:
+
+  * Group financial summary (collected/spent/balance)
+  * Player-wise ledger
+  * (Optional) Report export (PDF/Excel)
+
+### 6. Polls
+
+* For game availability or decisions
+* Features:
+
+  * Create polls (Yes/No, multiple choice)
+  * Vote & view summary
+
+### 7. Group Chat & Media
+
+* Text chat per group
+* Features:
+
+  * Media sharing (photos/videos)
+  * Emoji reactions (optional)
+  * Chat moderation (Admins)
+
+### 8. Notifications
+
+* Push notifications for:
+
+  * Contribution reminders
+  * Polls
+  * Expenses added
+  * Chat mentions (optional)
+
+## Feature Roadmap
+
+### MVP
+
+* User Management
+* Group Management
+* Contribution Tracking
+* Expense Tracking
+* Financial Summary
+* Push Notifications (basic)
+* Admin Panel (basic)
+* Sporty UI
+
+### Future Features
+
+* Polls
+* Group Chat & Media
+* Report Export
+* Chat Reactions & Media Gallery
+* Attendance Tracker
+* In-app Announcements
+* Game Stats Tracker (optional)
+
+## Backend Architecture (ASP.NET Core + SQL Server)
+
+### Layers:
+
+* **API Layer**: ASP.NET Core Web API Controllers
+* **Application Layer**: Services and business logic
+* **Domain Layer**: Entities and business models
+* **Infrastructure Layer**: EF Core + SQL Server, storage integrations
+* **Auth Layer**: ASP.NET Core Identity + JWT
+
+### Core APIs:
+
+* **/api/auth**: Register, Login, Refresh Token
+* **/api/users**: CRUD, roles management
+* **/api/groups**: CRUD groups, manage members
+* **/api/contributions**: Track and manage contributions
+* **/api/expenses**: Track expenses, adjust contributions
+* **/api/polls**: Create/vote polls
+* **/api/chats**: Chat messaging, media sharing
+* **/api/reports**: Generate summaries
+* **/api/notifications**: Manage FCM tokens, send reminders
+
+### Database Design (Core Tables)
+
+* Users (Id, Name, Email, Phone, PasswordHash, Role)
+* Groups (Id, Name, Type)
+* GroupMembers (GroupId, UserId)
+* Contributions (Id, GroupId, UserId, Amount, Month, Status)
+* Expenses (Id, GroupId, Item, Amount, PurchasedById, Date, Notes)
+* Polls (Id, GroupId, Question, Options, CreatedById, CreatedAt)
+* PollVotes (PollId, UserId, SelectedOption)
+* Chats (Id, GroupId, UserId, Message, MediaUrl, CreatedAt)
+* Notifications (Id, UserId, Token)
+
+## UI Design Guidelines
+
+* Theme: Sporty (greens, blues, whites, orange accents)
+* Style: Rounded cards, bold fonts, intuitive tabs
+* Key Screens:
+
+  * Login/Register
+  * Home Dashboard (Group Selector)
+  * Group Details (Tabs: Contributions/Expenses/Polls/Chat)
+  * Contribution Tracker
+  * Expense Log
+  * Polls
+  * Group Chat
+  * Admin Panel
+  * Profile/Settings
+
+## Copilot Guidelines
+  * Please use powershell commands instead of linux based commands.

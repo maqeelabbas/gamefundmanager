@@ -1,0 +1,69 @@
+using GameFundManager.Application.DTOs;
+using GameFundManager.Application.Interfaces;
+using GameFundManager.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace GameFundManager.API.Controllers
+{
+    [Authorize]
+    public class ExpensesController : BaseApiController
+    {
+        private readonly IExpenseService _expenseService;
+
+        public ExpensesController(IExpenseService expenseService)
+        {
+            _expenseService = expenseService;
+        }
+
+        [HttpGet("group/{groupId}")]
+        public async Task<IActionResult> GetGroupExpenses(Guid groupId)
+        {
+            var response = await _expenseService.GetGroupExpensesAsync(groupId);
+            return HandleApiResponse(response);
+        }
+
+        [HttpGet("group/{groupId}/status/{status}")]
+        public async Task<IActionResult> GetExpensesByStatus(Guid groupId, ExpenseStatus status)
+        {
+            var response = await _expenseService.GetExpensesByStatusAsync(groupId, status);
+            return HandleApiResponse(response);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetExpenseById(Guid id)
+        {
+            var response = await _expenseService.GetExpenseByIdAsync(id);
+            return HandleApiResponse(response);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateExpense([FromBody] CreateExpenseDto expenseDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = GetCurrentUserId();
+            var response = await _expenseService.CreateExpenseAsync(expenseDto, userId);
+            return HandleApiResponse(response);
+        }
+
+        [HttpPut("{id}/status/{status}")]
+        public async Task<IActionResult> UpdateExpenseStatus(Guid id, ExpenseStatus status)
+        {
+            var userId = GetCurrentUserId();
+            var response = await _expenseService.UpdateExpenseStatusAsync(id, status, userId);
+            return HandleApiResponse(response);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteExpense(Guid id)
+        {
+            var userId = GetCurrentUserId();
+            var response = await _expenseService.DeleteExpenseAsync(id, userId);
+            return HandleApiResponse(response);
+        }
+    }
+}

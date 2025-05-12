@@ -1,0 +1,116 @@
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
+
+namespace GameFundManager.API.Swagger
+{
+    /// <summary>
+    /// Adds example values to Swagger based on example attributes
+    /// </summary>
+    public class ExampleFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            var apiDescription = context.ApiDescription;
+            
+            // Get the endpoint's action method
+            var methodInfo = context.MethodInfo;
+            
+            // Process parameters with example attributes
+            foreach (var parameter in operation.Parameters)
+            {
+                // Find the corresponding parameter in the action method
+                var parameterInfo = methodInfo.GetParameters()
+                    .FirstOrDefault(p => p.Name?.ToLower() == parameter.Name.ToLower());
+                
+                if (parameterInfo == null)
+                    continue;
+                
+                // Check for example attributes
+                var exampleAttribute = parameterInfo.GetCustomAttribute<SwaggerExampleAttribute>();
+                if (exampleAttribute != null)
+                {
+                    parameter.Example = new OpenApiString(exampleAttribute.Example);
+                    parameter.Description = string.IsNullOrEmpty(exampleAttribute.Description) ? 
+                        parameter.Description : 
+                        exampleAttribute.Description;
+                }
+            }
+            
+            // Process request body examples
+            if (operation.RequestBody != null && context.ApiDescription.ParameterDescriptions.Count > 0)
+            {
+                // Get the model from request body
+                var requestTypeInfo = context.ApiDescription.ParameterDescriptions
+                    .FirstOrDefault(p => p.Source.Id?.ToLower() == "body");
+                
+                if (requestTypeInfo != null && requestTypeInfo.Type != null)
+                {
+                    // Check for example attributes on the parameter or its properties
+                    var bodyParam = methodInfo.GetParameters()
+                        .FirstOrDefault(p => p.ParameterType == requestTypeInfo.Type);
+                    
+                    if (bodyParam != null)
+                    {
+                        var exampleAttribute = bodyParam.GetCustomAttribute<SwaggerExampleAttribute>();
+                        if (exampleAttribute != null && !string.IsNullOrEmpty(exampleAttribute.Example))
+                        {
+                            var mediaType = operation.RequestBody.Content.First().Value;
+                            mediaType.Example = new OpenApiString(exampleAttribute.Example);
+                        }
+                    }
+                }
+            }
+            
+            // Process response examples
+            if (operation.Responses.Count > 0)
+            {
+                var successResponseAttribute = methodInfo.GetCustomAttribute<SwaggerResponseExampleAttribute>();
+                if (successResponseAttribute != null && !string.IsNullOrEmpty(successResponseAttribute.Example))
+                {
+                    if (operation.Responses.TryGetValue(successResponseAttribute.StatusCode.ToString(), out var response))
+                    {
+                        var mediaType = response.Content.FirstOrDefault().Value;
+                        if (mediaType != null)
+                        {
+                            mediaType.Example = new OpenApiString(successResponseAttribute.Example);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Attribute for adding example values to parameters and request bodies in Swagger
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class SwaggerExampleAttribute : Attribute
+    {
+        public string Example { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        
+        public SwaggerExampleAttribute(string example, string? description = null)
+        {
+            Example = example;
+            Description = description;
+        }
+    }
+    
+    /// <summary>
+    /// Attribute for adding example values to responses in Swagger
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    public class SwaggerResponseExampleAttribute : Attribute
+    {
+        public int StatusCode { get; set; }
+        public string Example { get; set; } = string.Empty;
+        
+        public SwaggerResponseExampleAttribute(int statusCode, string example)
+        {
+            StatusCode = statusCode;
+            Example = example;
+        }
+    }
+}
