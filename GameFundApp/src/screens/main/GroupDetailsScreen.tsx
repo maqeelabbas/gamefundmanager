@@ -1,30 +1,36 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  RefreshControl,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
-import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
-import { useFocusEffect } from "@react-navigation/native";
+// This file combines the original UI with the React Hook order fixes 
+import React, { useState, useEffect, useCallback } from 'react';
+import { ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+
+// Import components and services
 import {
   StyledView,
   StyledText,
   StyledTouchableOpacity,
-  StyledScrollView,
-  StyledImage,
+  StyledScrollView
 } from "../../utils/StyledComponents";
-import { MemberList, FinancialSummary } from "../../components";
-import { useApi } from "../../hooks";
-import { groupService } from "../../services";
-import { expenseService } from "../../services/expense.service";
-import { contributionService } from "../../services/contribution.service";
-import { pollService } from "../../services/poll.service";
-import { Expense } from "../../models/expense.model";
-import { Contribution } from "../../models/contribution.model";
-import { Group, GroupMember } from "../../models/group.model";
-import { Poll } from "../../models/poll.model";
-import { RootStackParamList } from "../../navigation/types";
+import { useApi } from '../../hooks';
+import { useAuth } from '../../context/AuthContext';
+import { groupService } from '../../services/group.service';
+import { expenseService } from '../../services/expense.service';
+import { contributionService } from '../../services/contribution.service';
+import { pollService } from '../../services/poll.service';
+import { RootStackParamList } from '../../navigation/types';
+import { CreateGroupRequest } from '../../models';
+
+// Import tab components
+import {
+  SummaryTab,
+  MembersTab,
+  ExpensesTab,
+  ContributionsTab,
+  PollsTab,
+  ChatTab
+} from './group-details-tabs';
 
 // SportyApp theme colors
 const COLORS = {
@@ -40,11 +46,8 @@ const COLORS = {
 };
 
 // TypeScript types
-type GroupDetailsScreenRouteProp = RouteProp<
-  RootStackParamList,
-  "GroupDetails"
->;
-type GroupDetailsScreenNavigationProp = any; // Using any since we don't have the exact stack navigator type
+type GroupDetailsScreenRouteProp = RouteProp<RootStackParamList, 'GroupDetails'>;
+type GroupDetailsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Tab types for the group details screen
 type TabType =
@@ -56,528 +59,324 @@ type TabType =
   | "chat";
 
 const GroupDetailsScreen: React.FC = () => {
-  // Navigation and route params
+  const navigation = useNavigation<GroupDetailsNavigationProp>();
   const route = useRoute<GroupDetailsScreenRouteProp>();
-  const navigation = useNavigation<GroupDetailsScreenNavigationProp>();
   const { groupId } = route.params;
-
-  // State variables
+  const { user } = useAuth();
+  
+  // IMPORTANT: Always define all state hooks at the top level
+  // to ensure consistent hook execution order
   const [activeTab, setActiveTab] = useState<TabType>("summary");
   const [refreshing, setRefreshing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [groupForm, setGroupForm] = useState<Partial<CreateGroupRequest>>({});
+  
+  // API hooks for group data - always initialize regardless of which tab is active
+  const { 
+    data: group, 
+    loading: loadingGroup, 
+    error: groupError,
+    execute: fetchGroup
+  } = useApi(() => groupService.getGroupById(groupId), true);
 
-  // Use the useApi hook to fetch group details
+  // Members data
   const {
-    data: group,
-    loading,
-    error,
-    execute: fetchGroupDetails,
-  } = useApi<Group>(() => groupService.getGroupById(groupId));
+    data: groupMembers,
+    loading: loadingMembers,
+    error: membersError,
+    execute: fetchMembers
+  } = useApi(() => groupService.getGroupMembers(groupId), false);
+  
+  // Expenses data
+  const {
+    data: expenses,
+    loading: loadingExpenses,
+    error: expensesError,
+    execute: fetchExpenses
+  } = useApi(() => expenseService.getGroupExpenses(groupId), false);
+  
+  // Contributions data
+  const {
+    data: contributions,
+    loading: loadingContributions,
+    error: contributionsError,
+    execute: fetchContributions
+  } = useApi(() => contributionService.getGroupContributions(groupId), false);
 
-  // Refresh control function
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchGroupDetails().finally(() => setRefreshing(false));
-  }, [fetchGroupDetails]);
+  // Polls data
+  const {
+    data: polls,
+    loading: loadingPolls,
+    error: pollsError,
+    execute: fetchPolls
+  } = useApi(() => pollService.getGroupPolls(groupId), false);
+  
+  // Group management API hooks
+  const {
+    loading: updateLoading,
+    error: updateError,
+    execute: updateGroup
+  } = useApi((data: Partial<CreateGroupRequest>) => 
+    groupService.updateGroup(groupId, data), false);
 
-  // Set screen title when group is loaded
+  const {
+    loading: leaveLoading,
+    error: leaveError,
+    execute: leaveGroupAPI
+  } = useApi(() => 
+    groupService.removeGroupMember(groupId, user?.id || ''), false);
+  
+  // Initialize form data when group is loaded
   useEffect(() => {
     if (group) {
-      navigation.setOptions({
-        title: group.name,
-        headerRight: () => (
-          <StyledTouchableOpacity
-            onPress={() => {
-              if (group.isUserAdmin) {
-                // Show admin options for the group
-                Alert.alert("Group Options", "What would you like to do?", [
-                  {
-                    text: "Edit Group",
-                    onPress: () =>
-                      navigation.navigate("CreateGroup", { groupId: group.id }),
-                  },
-                  {
-                    text: "Add Member",
-                    onPress: () =>
-                      Alert.alert("Add Member", "This feature is coming soon!"),
-                  },
-                  { text: "Cancel", style: "cancel" },
-                ]);
-              }
-            }}
-            className="mr-4"
-          >
-            {group.isUserAdmin && (
-              <StyledText className="text-primary font-bold">
-                Options
-              </StyledText>
-            )}
-          </StyledTouchableOpacity>
-        ),
+      setGroupForm({
+        name: group.name,
+        description: group.description,
+        targetAmount: group.targetAmount,
+        currency: group.currency
       });
-    }
-  }, [group, navigation]);
-
-  // Load group details only once when the screen is first focused
-  const [groupDetailsLoaded, setGroupDetailsLoaded] = useState(false);
+    }  }, [group]);
+    // Load data for the active tab when it changes - with data already loaded tracking
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [expensesLoaded, setExpensesLoaded] = useState(false);
+  const [contributionsLoaded, setContributionsLoaded] = useState(false);
+  const [pollsLoaded, setPollsLoaded] = useState(false);
   
-  useFocusEffect(
-    useCallback(() => {
-      if (!groupDetailsLoaded) {
-        fetchGroupDetails();
-        setGroupDetailsLoaded(true);
+  // Load data for the active tab when it changes
+  useEffect(() => {
+    // This ensures we fetch data only once per tab selection
+    if (activeTab === "members" && !membersLoaded) {
+      fetchMembers();
+      setMembersLoaded(true);
+    } else if (activeTab === "expenses" && !expensesLoaded) {
+      fetchExpenses();
+      setExpensesLoaded(true);
+    } else if (activeTab === "contributions" && !contributionsLoaded) {
+      fetchContributions();
+      setContributionsLoaded(true);
+    } else if (activeTab === "polls" && !pollsLoaded) {
+      fetchPolls();
+      setPollsLoaded(true);
+    }
+  }, [
+    activeTab,
+    fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
+    membersLoaded, expensesLoaded, contributionsLoaded, pollsLoaded
+  ]);
+    // Helper function to refresh current tab data
+  const refreshCurrentTabData = useCallback(() => {
+    switch (activeTab) {
+      case "summary":
+        fetchGroup();
+        break;
+      case "members":
+        fetchMembers();
+        // Allow refetching on next tab switch if needed
+        setMembersLoaded(false);
+        break;
+      case "expenses":
+        fetchExpenses();
+        setExpensesLoaded(false);
+        break;
+      case "contributions":
+        fetchContributions();
+        setContributionsLoaded(false);
+        break;
+      case "polls":
+        fetchPolls();
+        setPollsLoaded(false);
+        break;
+      default:
+        break;
+    }
+  }, [
+    activeTab, fetchGroup, fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
+    setMembersLoaded, setExpensesLoaded, setContributionsLoaded, setPollsLoaded
+  ]);
+  
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshCurrentTabData();
+    setRefreshing(false);
+  }, [refreshCurrentTabData]);
+  
+  // Calculate financial info
+  const getTotalContributions = () => {
+    return group?.totalContributions || 0;
+  };
+  
+  const getTotalExpenses = () => {
+    return group?.totalExpenses || 0;
+  };
+  
+  const getBalance = () => {
+    return group?.balance || 0;
+  };
+  
+  const getProgressPercentage = () => {
+    return group?.progressPercentage || 0;
+  };
+  
+  // Event handlers
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Cancel editing - reset form data
+      if (group) {
+        setGroupForm({
+          name: group.name,
+          description: group.description,
+          targetAmount: group.targetAmount,
+          currency: group.currency
+        });
       }
-      return () => {}; // cleanup function
-    }, [fetchGroupDetails, groupDetailsLoaded])
-  );
+    }
+    setIsEditing(!isEditing);
+  };
+  
+  const handleGroupUpdate = async () => {
+    try {
+      if (!groupForm.name) {
+        Alert.alert("Validation Error", "Group name is required");
+        return;
+      }
+      
+      const updatedGroup = await updateGroup(groupForm);
+      
+      if (updatedGroup) {
+        setIsEditing(false);
+        Alert.alert("Success", "Group updated successfully");
+        fetchGroup(); // Refresh group data
+      }
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to update group");
+    }
+  };
+
+  const handleLeaveGroup = () => {
+    Alert.alert(
+      "Leave Group",
+      "Are you sure you want to leave this group? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await leaveGroupAPI();
+              Alert.alert("Success", "You have left the group");
+              navigation.goBack();
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to leave group");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   // Render functions for different tabs
-  const renderSummaryTab = () => (
-    <StyledView className="px-4 mb-6">
-      <FinancialSummary 
-        groupId={groupId} 
-        currency={group?.currency || "USD"} 
-        onViewAllExpenses={() => setActiveTab("expenses")}
-        onViewAllContributions={() => setActiveTab("contributions")}
-      />
-    </StyledView>
-  );
-
-  // Fixed Members Tab Implementation
-  // Use refs to store data outside of render cycle and prevent infinite API calls
-  const membersDataRef = useRef({
-    initialized: false,
-    loaded: false,
-    members: [] as GroupMember[],
-    loading: false,
-    error: null as Error | null
-  });
-
-  const renderMembersTab = () => {
-    // Local state to trigger re-renders
-    const [, forceUpdate] = useState({});
-    
-    // Initialize the members data fetching only once
-    useEffect(() => {
-      if (!membersDataRef.current.initialized) {
-        membersDataRef.current.initialized = true;
-        membersDataRef.current.loading = true;
-        
-        // Fetch members data
-        groupService.getGroupMembers(groupId)
-          .then((result) => {
-            membersDataRef.current.members = result;
-            membersDataRef.current.loaded = true;
-            membersDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          })
-          .catch((err) => {
-            membersDataRef.current.error = err;
-            membersDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          });
-      }
-    }, []);
-    
-    // Get data from ref for rendering
-    const { members, loading, error } = membersDataRef.current;
-    
-    // Handler for retrying members fetch
-    const handleRetryMembersFetch = () => {
-      membersDataRef.current.loading = true;
-      membersDataRef.current.error = null;
-      forceUpdate({}); // Update UI to show loading state
-      
-      groupService.getGroupMembers(groupId)
-        .then((result) => {
-          membersDataRef.current.members = result;
-          membersDataRef.current.loaded = true;
-          membersDataRef.current.loading = false;
-          forceUpdate({}); // Trigger re-render
-        })
-        .catch((err) => {
-          membersDataRef.current.error = err;
-          membersDataRef.current.loading = false;
-          forceUpdate({}); // Trigger re-render
-        });
-    };
-    
-    return (
-      <StyledView className="px-4 mb-6">
-        {group ? (
-          <>
-            {loading && (
-              <StyledView className="w-full items-center py-4">
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <StyledText className="mt-2 text-gray-500">Loading members...</StyledText>
-              </StyledView>
-            )}
-            
-            {error && (
-              <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-                <StyledText className="text-red-500 mb-2">Failed to load members</StyledText>                
-                <StyledTouchableOpacity 
-                  className="bg-primary px-4 py-2 rounded-lg"
-                  onPress={handleRetryMembersFetch}
-                >
-                  <StyledText className="text-white">Try Again</StyledText>
-                </StyledTouchableOpacity>
-              </StyledView>
-            )}
-              
-            {!loading && !error && (
-              <MemberList
-                members={members || []}
-                isUserAdmin={group.isUserAdmin}
-                onMemberPress={(member) => {
-                  navigation.navigate("UserDetails", { userId: member.user.id });
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <StyledView className="w-full items-center py-4">
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </StyledView>
-        )}
-      </StyledView>
-    );
-  };
-
-  // Fixed expenses tab implementation with similar pattern
-  const expensesDataRef = useRef({
-    initialized: false,
-    loaded: false,
-    expenses: [] as Expense[],
-    loading: false,
-    error: null as Error | null
-  });
-
-  const renderExpensesTab = () => {
-    // Local state to trigger re-renders
-    const [, forceUpdate] = useState({});
-    
-    // Initialize expenses data fetching only once
-    useEffect(() => {
-      if (!expensesDataRef.current.initialized) {
-        expensesDataRef.current.initialized = true;
-        expensesDataRef.current.loading = true;
-        
-        // Fetch expenses data
-        expenseService.getGroupExpenses(groupId)
-          .then((result) => {
-            expensesDataRef.current.expenses = result;
-            expensesDataRef.current.loaded = true;
-            expensesDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          })
-          .catch((err) => {
-            expensesDataRef.current.error = err;
-            expensesDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          });
-      }
-    }, []);
-    
-    // Get data from ref
-    const { expenses, loading, error } = expensesDataRef.current;
-    
-    // Handler for retry
-    const handleRetryExpensesFetch = () => {
-      expensesDataRef.current.loading = true;
-      expensesDataRef.current.error = null;
-      forceUpdate({});
-      
-      expenseService.getGroupExpenses(groupId)
-        .then((result) => {
-          expensesDataRef.current.expenses = result;
-          expensesDataRef.current.loading = false;
-          forceUpdate({});
-        })
-        .catch((err) => {
-          expensesDataRef.current.error = err;
-          expensesDataRef.current.loading = false;
-          forceUpdate({});
-        });
-    };
-
-    return (
-      <StyledView className="px-4 mb-6">
-        <StyledView className="flex-row justify-between mb-4 items-center">
-          <StyledText className="text-xl font-bold">Expenses</StyledText>
-          <StyledTouchableOpacity
-            className="bg-primary px-4 py-2 rounded-full"
-            onPress={() => navigation.navigate("AddExpense", { groupId })}
-          >
-            <StyledText className="text-white font-bold">+ Add</StyledText>
-          </StyledTouchableOpacity>
-        </StyledView>
-
-        {/* Loading state */}
-        {loading && (
-          <StyledView className="items-center py-4">
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <StyledText className="text-gray-500 mt-2">
-              Loading expenses...
-            </StyledText>
-          </StyledView>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-            <StyledText className="text-red-500 mb-2">
-              Failed to load expenses
-            </StyledText>
-            <StyledTouchableOpacity
-              className="bg-primary px-4 py-2 rounded-lg"
-              onPress={handleRetryExpensesFetch}
-            >
-              <StyledText className="text-white">Try Again</StyledText>
-            </StyledTouchableOpacity>
-          </StyledView>
-        )}
-        
-        {/* Success state with expenses */}
-        {!loading && !error && expenses && expenses.length > 0 && (
-          expenses.map((expense: Expense) => (
-            <StyledView
-              key={expense.id}
-              className="bg-white p-4 rounded-xl shadow-sm mb-3"
-            >
-              <StyledView className="flex-row justify-between">
-                <StyledText className="text-text font-bold">
-                  {expense.title}
-                </StyledText>
-                <StyledText className="font-bold">{`${expense.amount} ${
-                  group?.currency || "USD"
-                }`}</StyledText>
-              </StyledView>
-              <StyledText className="text-gray-500 text-sm mt-1">
-                {expense.description}
-              </StyledText>
-              <StyledView className="flex-row justify-between mt-2">
-                <StyledText className="text-gray-500 text-xs">
-                  {expense.createdByUser
-                    ? `${expense.createdByUser.firstName} ${expense.createdByUser.lastName}`
-                    : "Unknown user"}
-                </StyledText>
-                <StyledText className="text-gray-500 text-xs">
-                  {new Date(expense.expenseDate).toLocaleDateString()}
-                </StyledText>
-              </StyledView>
-            </StyledView>
-          ))
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && (!expenses || expenses.length === 0) && (
-          <StyledView className="bg-white p-6 rounded-xl shadow-sm items-center">
-            <StyledText className="text-center text-gray-400 mb-2">
-              No expenses recorded yet.
-            </StyledText>
-            <StyledText className="text-center text-gray-400 text-sm">
-              Add expenses to track group spending.
-            </StyledText>
-          </StyledView>
-        )}
-      </StyledView>
-    );
-  };
-
-  // Fixed contributions tab implementation with the same pattern
-  const contributionsDataRef = useRef({
-    initialized: false,
-    loaded: false,
-    contributions: [] as Contribution[],
-    loading: false,
-    error: null as Error | null
-  });
-
-  const renderContributionsTab = () => {
-    // Local state to trigger re-renders
-    const [, forceUpdate] = useState({});
-    
-    // Initialize contributions data fetching only once
-    useEffect(() => {
-      if (!contributionsDataRef.current.initialized) {
-        contributionsDataRef.current.initialized = true;
-        contributionsDataRef.current.loading = true;
-        
-        // Fetch contributions data
-        contributionService.getGroupContributions(groupId)
-          .then((result) => {
-            contributionsDataRef.current.contributions = result;
-            contributionsDataRef.current.loaded = true;
-            contributionsDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          })
-          .catch((err) => {
-            contributionsDataRef.current.error = err;
-            contributionsDataRef.current.loading = false;
-            forceUpdate({}); // Trigger re-render
-          });
-      }
-    }, []);
-    
-    // Get data from ref
-    const { contributions, loading, error } = contributionsDataRef.current;
-    
-    // Handler for retry
-    const handleRetryContributionsFetch = () => {
-      contributionsDataRef.current.loading = true;
-      contributionsDataRef.current.error = null;
-      forceUpdate({});
-      
-      contributionService.getGroupContributions(groupId)
-        .then((result) => {
-          contributionsDataRef.current.contributions = result;
-          contributionsDataRef.current.loading = false;
-          forceUpdate({});
-        })
-        .catch((err) => {
-          contributionsDataRef.current.error = err;
-          contributionsDataRef.current.loading = false;
-          forceUpdate({});
-        });
-    };
-
-    return (
-      <StyledView className="px-4 mb-6">
-        <StyledView className="flex-row justify-between mb-4 items-center">
-          <StyledText className="text-xl font-bold">Contributions</StyledText>
-          <StyledTouchableOpacity
-            className="bg-primary px-4 py-2 rounded-full"
-            onPress={() => navigation.navigate("AddContribution", { groupId })}
-          >
-            <StyledText className="text-white font-bold">+ Add</StyledText>
-          </StyledTouchableOpacity>
-        </StyledView>
-
-        {/* Loading state */}
-        {loading && (
-          <StyledView className="items-center py-4">
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <StyledText className="text-gray-500 mt-2">
-              Loading contributions...
-            </StyledText>
-          </StyledView>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-            <StyledText className="text-red-500 mb-2">
-              Failed to load contributions
-            </StyledText>
-            <StyledTouchableOpacity
-              className="bg-primary px-4 py-2 rounded-lg"
-              onPress={handleRetryContributionsFetch}
-            >
-              <StyledText className="text-white">Try Again</StyledText>
-            </StyledTouchableOpacity>
-          </StyledView>
-        )}
-
-        {/* Success state with contributions */}
-        {!loading && !error && contributions && contributions.length > 0 && (
-          contributions.map((contribution: Contribution) => (
-            <StyledView
-              key={contribution.id}
-              className="bg-white p-4 rounded-xl shadow-sm mb-3"
-            >
-              <StyledView className="flex-row justify-between">
-                <StyledText className="text-text font-bold">
-                  {contribution.user
-                    ? `${contribution.user.firstName} ${contribution.user.lastName}`
-                    : "Unknown user"}
-                </StyledText>
-                <StyledText className="font-bold text-green-600">{`+${
-                  contribution.amount
-                } ${group?.currency || "USD"}`}</StyledText>
-              </StyledView>
-              <StyledText className="text-gray-500 text-sm mt-1">
-                {contribution.description}
-              </StyledText>
-              <StyledView className="flex-row justify-between mt-2">
-                <StyledText className="text-gray-500 text-xs">
-                  {contribution.paymentMethod || "Cash"}
-                </StyledText>
-                <StyledText className="text-gray-500 text-xs">
-                  {new Date(contribution.contributionDate).toLocaleDateString()}
-                </StyledText>
-              </StyledView>
-            </StyledView>
-          ))
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && (!contributions || contributions.length === 0) && (
-          <StyledView className="bg-white p-6 rounded-xl shadow-sm items-center">
-            <StyledText className="text-center text-gray-400 mb-2">
-              No contributions recorded yet.
-            </StyledText>
-            <StyledText className="text-center text-gray-400 text-sm">
-              Add contributions to fund group activities.
-            </StyledText>
-          </StyledView>
-        )}
-      </StyledView>
-    );
-  };
-
-  const renderPollsTab = () => (
-    <StyledView className="px-4 mb-6">
-      <StyledView className="flex-row justify-between mb-4 items-center">
-        <StyledText className="text-xl font-bold">Polls</StyledText>
-        <StyledTouchableOpacity className="bg-primary px-4 py-2 rounded-full">
-          <StyledText className="text-white font-bold">+ Create</StyledText>
-        </StyledTouchableOpacity>
-      </StyledView>
-      <StyledText className="text-gray-500 mb-4">
-        Polls and votes for this group will appear here.
-      </StyledText>
-      {/* Poll list component would go here */}
-      <StyledText className="text-center text-gray-400 my-4">
-        No polls created yet.
-      </StyledText>
-    </StyledView>
-  );
-
-  const renderChatTab = () => (
-    <StyledView className="px-4 mb-6">
-      <StyledText className="text-xl font-bold mb-4">Group Chat</StyledText>
-      <StyledView className="bg-white p-4 rounded-xl shadow-sm mb-4 items-center">
-        <StyledText className="text-gray-500 mb-2">
-          Chat is coming soon!
-        </StyledText>
-        <StyledText className="text-sm text-gray-400">
-          Stay tuned for updates.
-        </StyledText>
-      </StyledView>
-    </StyledView>
-  );
-
-  // Render the appropriate tab content
+  // All these functions are defined regardless of the active tab to 
+  // ensure consistent hook execution order
+    // Content for the active tab
+  // Content for the active tab
   const renderTabContent = () => {
     switch (activeTab) {
       case "summary":
-        return renderSummaryTab();
+        return (
+          <SummaryTab
+            groupId={groupId}
+            group={group}
+            expenses={expenses || []}
+            contributions={contributions || []}
+            loadingExpenses={loadingExpenses}
+            loadingContributions={loadingContributions}
+            expensesError={expensesError}
+            contributionsError={contributionsError}
+            fetchExpenses={fetchExpenses}
+            fetchContributions={fetchContributions}
+            onViewAllExpenses={() => setActiveTab("expenses")}
+            onViewAllContributions={() => setActiveTab("contributions")}
+            handleEditToggle={handleEditToggle}
+            handleLeaveGroup={handleLeaveGroup}
+            getTotalContributions={getTotalContributions}
+            getProgressPercentage={getProgressPercentage}
+          />
+        );
       case "members":
-        return renderMembersTab();
+        return (
+          <MembersTab
+            groupId={groupId}
+            groupMembers={groupMembers || []}
+            loadingMembers={loadingMembers}
+            membersError={membersError}
+            fetchMembers={fetchMembers}
+            isUserAdmin={group?.isUserAdmin}
+            memberCount={group?.memberCount || 0}
+          />
+        );
       case "expenses":
-        return renderExpensesTab();
+        return (
+          <ExpensesTab
+            groupId={groupId}
+            expenses={expenses || []}
+            loadingExpenses={loadingExpenses}
+            expensesError={expensesError}
+            fetchExpenses={fetchExpenses}
+            currency={group?.currency}
+            navigation={navigation}
+          />
+        );
       case "contributions":
-        return renderContributionsTab();
+        return (
+          <ContributionsTab
+            groupId={groupId}
+            contributions={contributions || []}
+            loadingContributions={loadingContributions}
+            contributionsError={contributionsError}
+            fetchContributions={fetchContributions}
+            currency={group?.currency}
+            navigation={navigation}
+          />
+        );
       case "polls":
-        return renderPollsTab();
+        return (
+          <PollsTab
+            polls={polls || []}
+            loadingPolls={loadingPolls}
+            pollsError={pollsError}
+            fetchPolls={fetchPolls}
+          />
+        );
       case "chat":
-        return renderChatTab();
+        return <ChatTab />;
       default:
-        return renderSummaryTab();
+        return (
+          <SummaryTab
+            groupId={groupId}
+            group={group}
+            expenses={expenses || []}
+            contributions={contributions || []}
+            loadingExpenses={loadingExpenses}
+            loadingContributions={loadingContributions}
+            expensesError={expensesError}
+            contributionsError={contributionsError}
+            fetchExpenses={fetchExpenses}
+            fetchContributions={fetchContributions}
+            onViewAllExpenses={() => setActiveTab("expenses")}
+            onViewAllContributions={() => setActiveTab("contributions")}
+            handleEditToggle={handleEditToggle}
+            handleLeaveGroup={handleLeaveGroup}
+            getTotalContributions={getTotalContributions}
+            getProgressPercentage={getProgressPercentage}
+          />
+        );
     }
   };
 
   // Loading state
-  if (loading && !group) {
+  if (loadingGroup && !group) {
     return (
       <StyledView className="flex-1 justify-center items-center bg-background">
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -589,125 +388,90 @@ const GroupDetailsScreen: React.FC = () => {
   }
 
   // Error state
-  if (error) {
+  if (groupError) {
     return (
-      <StyledView className="flex-1 justify-center items-center bg-background px-4">
-        <StyledText className="text-red-500 text-lg mb-4">
-          Failed to load group details
+      <StyledView className="flex-1 justify-center items-center bg-background p-4">
+        <StyledText className="text-red-500 text-center mb-4">
+          Failed to load group details: {groupError.message}
         </StyledText>
-        <StyledText className="text-gray-500 mb-6">{error.message}</StyledText>
         <StyledTouchableOpacity
-          className="bg-primary px-6 py-3 rounded-lg"
-          onPress={() => fetchGroupDetails()}
+          className="bg-primary py-3 px-6 rounded-lg"
+          onPress={() => fetchGroup()}
         >
-          <StyledText className="text-white font-bold">Try Again</StyledText>
+          <StyledText className="text-white font-bold">
+            Try Again
+          </StyledText>
         </StyledTouchableOpacity>
       </StyledView>
     );
   }
-  
+
+  // Define tabs
+  const tabs = [
+    { id: "summary", label: "Summary" },
+    { id: "members", label: "Members" },
+    { id: "expenses", label: "Expenses" },
+    { id: "contributions", label: "Contributions" },
+    { id: "polls", label: "Polls" },
+    { id: "chat", label: "Chat" },
+  ];
+
   return (
-    <StyledScrollView
-      className="flex-1 bg-background"
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Group header */}
-      {group && (
-        <StyledView className="bg-primary pt-2 pb-6 px-4 mb-4 rounded-b-3xl shadow-md">
-          <StyledView className="flex-row items-center mb-2">
-            {group.logoUrl ? (
-              <StyledImage
-                source={{ uri: group.logoUrl }}
-                className="w-16 h-16 rounded-full mr-4"
-              />
-            ) : (
-              <StyledView className="w-16 h-16 rounded-full bg-gray-300 justify-center items-center mr-4">
-                <StyledText className="text-2xl font-bold text-gray-500">
-                  {group.name.substring(0, 1).toUpperCase()}
-                </StyledText>
-              </StyledView>
-            )}
-            <StyledView>
-              <StyledText className="text-white text-xl font-bold">
-                {group.name}
-              </StyledText>
-              <StyledText className="text-white opacity-80">{`${group.memberCount} members`}</StyledText>
-            </StyledView>
-          </StyledView>
-
-          {/* Group financial summary card */}
-          <StyledView className="bg-white p-4 rounded-xl shadow-sm mt-2">
-            <StyledText className="text-gray-600 text-sm mb-1">
-              Fund Status:
-            </StyledText>
-            <StyledView className="flex-row justify-between mb-2">
-              <StyledText className="text-lg font-bold">{`${group.balance} ${group.currency}`}</StyledText>
-              <StyledText
-                className={`${
-                  group.balance >= 0 ? "text-green-600" : "text-red-600"
-                } font-bold`}
-              >
-                {group.balance >= 0 ? "Positive" : "Negative"}
-              </StyledText>
-            </StyledView>
-
-            {/* Progress bar */}
-            <StyledView className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mb-2">
-              <StyledView
-                className="h-full bg-primary"
-                style={{ width: `${Math.min(100, group.progressPercentage)}%` }}
-              />
-            </StyledView>
-
-            <StyledView className="flex-row justify-between">
-              <StyledText className="text-xs text-gray-500">{`Target: ${group.targetAmount} ${group.currency}`}</StyledText>
-              <StyledText className="text-xs text-gray-500">{`${Math.round(
-                group.progressPercentage
-              )}% Complete`}</StyledText>
-            </StyledView>
-          </StyledView>
-        </StyledView>
-      )}
+    <StyledView className="flex-1 bg-background">
+      <StatusBar style="auto" />
       
-      {/* Tab navigation */}
-      <StyledScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="mb-4"
-      >
-        <StyledView className="flex-row px-4">
-          {[
-            { id: "summary", label: "Summary" },
-            { id: "members", label: "Members" },
-            { id: "expenses", label: "Expenses" },
-            { id: "contributions", label: "Contributions" },
-            { id: "polls", label: "Polls" },
-            { id: "chat", label: "Chat" },
-          ].map((tab) => (
-            <StyledTouchableOpacity
-              key={tab.id}
-              className={`px-4 py-2 rounded-full mr-2 ${
-                activeTab === tab.id ? "bg-primary" : "bg-gray-200"
-              }`}
-              onPress={() => setActiveTab(tab.id as TabType)}
-            >
-              <StyledText
-                className={`font-medium ${
-                  activeTab === tab.id ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {tab.label}
-              </StyledText>
-            </StyledTouchableOpacity>
-          ))}
+      {/* Header */}
+      <StyledView className="bg-primary pt-12 pb-3 px-4">
+        <StyledView className="flex-row items-center">
+          <StyledTouchableOpacity
+            className="mr-3"
+            onPress={() => navigation.goBack()}
+          >
+            <StyledText className="text-white text-xl">←</StyledText>
+          </StyledTouchableOpacity>
+          <StyledText className="text-white text-xl font-bold flex-1">
+            {group?.name || 'Group Details'}
+          </StyledText>
         </StyledView>
-      </StyledScrollView>
+      </StyledView>
+      
+      {/* Main content */}
+      <StyledScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Tab bar */}
+        <StyledScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          className="px-4 pt-3 pb-2"
+        >
+          <StyledView className="flex-row">
+            {tabs.map((tab) => (
+              <StyledTouchableOpacity
+                key={tab.id}
+                className={`px-4 py-2 rounded-full mr-2 ${
+                  activeTab === tab.id ? "bg-primary" : "bg-gray-200"
+                }`}
+                onPress={() => setActiveTab(tab.id as TabType)}
+              >
+                <StyledText
+                  className={`font-medium ${
+                    activeTab === tab.id ? "text-white" : "text-gray-700"
+                  }`}
+                >
+                  {tab.label}
+                </StyledText>
+              </StyledTouchableOpacity>
+            ))}
+          </StyledView>
+        </StyledScrollView>
 
-      {/* Tab content */}
-      {renderTabContent()}
-    </StyledScrollView>
+        {/* Tab content */}
+        {renderTabContent()}
+      </StyledScrollView>
+    </StyledView>
   );
 };
 

@@ -10,3 +10,15 @@ export const StyledScrollView = styled(ScrollView);
 export const StyledImage = styled(Image);
 export const StyledFlatList = styled(FlatList);
 export const StyledActivityIndicator = styled(ActivityIndicator);
+
+// Export fallback for non-styled usage - ensures backward compatibility
+export { 
+  Text, 
+  View, 
+  TouchableOpacity, 
+  TextInput, 
+  ScrollView, 
+  Image, 
+  FlatList, 
+  ActivityIndicator 
+};

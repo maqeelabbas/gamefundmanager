@@ -86,21 +86,21 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
     expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) : 0;
     
   const totalContributions = contributions && Array.isArray(contributions) ? 
-    contributions.reduce((sum: number, contribution: Contribution) => sum + contribution.amount, 0) : 0;
-    
-  const balance = totalContributions - totalExpenses;
-
+    contributions.reduce((sum: number, contribution: Contribution) => sum + contribution.amount, 0) : 0;  const balance = totalContributions - totalExpenses;
+  
   return (
     <StyledView>
       {/* Financial Summary */}
       <StyledView className="flex-row justify-between mb-6">
-        <StyledView className="bg-white p-4 rounded-xl shadow-sm w-[31%]">          <StyledText className="text-text text-xs mb-1">Collection</StyledText>
+        <StyledView className="bg-white p-4 rounded-xl shadow-sm w-[31%]">
+          <StyledText className="text-text text-xs mb-1">Collection</StyledText>
           <StyledText className="text-success text-lg font-bold">
             {currency} {totalContributions.toFixed(2)}
           </StyledText>
         </StyledView>
 
-        <StyledView className="bg-white p-4 rounded-xl shadow-sm w-[31%]">          <StyledText className="text-text text-xs mb-1">Expenses</StyledText>
+        <StyledView className="bg-white p-4 rounded-xl shadow-sm w-[31%]">
+          <StyledText className="text-text text-xs mb-1">Expenses</StyledText>
           <StyledText className="text-danger text-lg font-bold">
             {currency} {totalExpenses.toFixed(2)}
           </StyledText>
@@ -126,7 +126,8 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           </StyledView>
         ) : expensesError ? (
           <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-            <StyledText className="text-red-500 mb-2">Failed to load expenses</StyledText>            <StyledTouchableOpacity 
+            <StyledText className="text-red-500 mb-2">Failed to load expenses</StyledText>
+            <StyledTouchableOpacity 
               className="bg-primary px-4 py-2 rounded-lg"
               onPress={() => fetchExpenses()}
             >
@@ -144,7 +145,8 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               </StyledView>
               
               <StyledView className="flex-row justify-between mt-2">
-                <StyledText className="text-gray-500 text-xs">                  Paid by: {expense.createdByUser ? 
+                <StyledText className="text-gray-500 text-xs">
+                  Paid by: {expense.createdByUser ? 
                     `${expense.createdByUser.firstName} ${expense.createdByUser.lastName}` : 
                     'Unknown'}
                 </StyledText>
@@ -181,7 +183,8 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           </StyledView>
         ) : contributionsError ? (
           <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-            <StyledText className="text-red-500 mb-2">Failed to load contributions</StyledText>            <StyledTouchableOpacity 
+            <StyledText className="text-red-500 mb-2">Failed to load contributions</StyledText>
+            <StyledTouchableOpacity 
               className="bg-primary px-4 py-2 rounded-lg"
               onPress={() => fetchContributions()}
             >
