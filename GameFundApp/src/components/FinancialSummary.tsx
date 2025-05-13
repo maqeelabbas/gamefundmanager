@@ -138,7 +138,7 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
           expenses.slice(0, 3).map((expense: Expense) => (
             <StyledView key={expense.id} className="bg-white p-4 rounded-xl shadow-sm mb-3">
               <StyledView className="flex-row justify-between">
-                <StyledText className="text-text font-bold">{expense.description}</StyledText>
+                <StyledText className="text-text font-bold">{expense.title}</StyledText>
                 <StyledText className="text-red-500 font-bold">
                   {currency} {expense.amount.toFixed(2)}
                 </StyledText>

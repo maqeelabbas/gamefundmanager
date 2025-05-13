@@ -32,4 +32,5 @@ export interface CreateExpenseRequest {
   expenseDate: Date;
   receiptUrl?: string;
   groupId: string;
+  paidByUserId?: string; // ID of the user who paid for the expense
 }
