@@ -10,7 +10,7 @@ export interface UserResponse {
   id: string;
   name: string;
   email: string;
-  role: 'player' | 'admin';
+  role: 'member' | 'admin';
 }
 
 // Auth response type needed for existing code compatibility
@@ -83,7 +83,7 @@ class AuthService {
             id: response.data.userId,
             name: `${response.data.firstName} ${response.data.lastName}`,
             email: response.data.email,
-            role: 'player', // Default role
+            role: 'member', // Default role
           },
           token: response.data.token
         };
@@ -144,7 +144,7 @@ class AuthService {
             id: response.data.userId,
             name: `${response.data.firstName} ${response.data.lastName}`,
             email: response.data.email,
-            role: 'player', // Default role
+            role: 'member', // Default role
           },
           token: response.data.token
         };
@@ -222,7 +222,7 @@ class AuthService {
         id: userId,
         name: userName,
         email,
-        role: 'player',
+        role: 'member',
       },
       token: `mock_token_${userId}`, // Mock token
     };

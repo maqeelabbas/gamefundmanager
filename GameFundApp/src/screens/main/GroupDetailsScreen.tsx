@@ -1,7 +1,7 @@
 // This file combines the original UI with the React Hook order fixes 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -71,6 +71,47 @@ const GroupDetailsScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [groupForm, setGroupForm] = useState<Partial<CreateGroupRequest>>({});
   
+  // Expense and Contribution updates from navigation params
+  const { expenseAdded, expenseAddedAt, contributionAdded, contributionAddedAt } = route.params || {};
+  
+  // Track the last processed timestamps to prevent duplicate refreshes
+  const [lastProcessedExpenseTimestamp, setLastProcessedExpenseTimestamp] = useState<number | undefined>(undefined);
+  const [lastProcessedContributionTimestamp, setLastProcessedContributionTimestamp] = useState<number | undefined>(undefined);
+    // Watch route params to refresh data when returning from add screens with success  
+  useEffect(() => {
+    if (expenseAdded && expenseAddedAt && expenseAddedAt !== lastProcessedExpenseTimestamp) {
+      console.log('Expense added, refreshing expense data...', expenseAddedAt);
+      // Force refresh group data regardless of tab
+      fetchGroup();
+      
+      // Always refresh expense data when an expense is added
+      fetchExpenses();
+      
+      // Mark this expense addition as processed
+      setLastProcessedExpenseTimestamp(expenseAddedAt);
+      
+      // Reset the loaded flags to ensure fresh data on tab selection
+      setExpensesLoaded(false);
+      
+      console.log('Expense data refresh complete');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseAdded, expenseAddedAt, lastProcessedExpenseTimestamp]);
+
+  useEffect(() => {
+    if (contributionAdded && contributionAddedAt && contributionAddedAt !== lastProcessedContributionTimestamp) {
+      console.log('Contribution added, refreshing contribution data...', contributionAddedAt);
+      fetchContributions();
+      setLastProcessedContributionTimestamp(contributionAddedAt);
+      
+      // If summary tab is active, refresh it too
+      if (activeTab === 'summary') {
+        fetchGroup();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contributionAdded, contributionAddedAt, lastProcessedContributionTimestamp]);
+
   // API hooks for group data - always initialize regardless of which tab is active
   const { 
     data: group, 
@@ -94,8 +135,7 @@ const GroupDetailsScreen: React.FC = () => {
     error: expensesError,
     execute: fetchExpenses
   } = useApi(() => expenseService.getGroupExpenses(groupId), false);
-  
-  // Contributions data
+    // Contributions data
   const {
     data: contributions,
     loading: loadingContributions,
@@ -141,8 +181,7 @@ const GroupDetailsScreen: React.FC = () => {
   const [expensesLoaded, setExpensesLoaded] = useState(false);
   const [contributionsLoaded, setContributionsLoaded] = useState(false);
   const [pollsLoaded, setPollsLoaded] = useState(false);
-  
-  // Load data for the active tab when it changes
+    // Load data for the active tab when it changes
   useEffect(() => {
     // This ensures we fetch data only once per tab selection
     if (activeTab === "members" && !membersLoaded) {
@@ -158,11 +197,45 @@ const GroupDetailsScreen: React.FC = () => {
       fetchPolls();
       setPollsLoaded(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeTab,
-    fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
+    // Removed fetch functions from dependencies to prevent infinite loops
     membersLoaded, expensesLoaded, contributionsLoaded, pollsLoaded
   ]);
+  // Refresh active tab data when screen receives focus (e.g., coming back from Add Expense screen)  
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Screen focused - ensuring data is refreshed for tab:', activeTab);
+      
+      // Always refresh group data to ensure totals are up-to-date
+      fetchGroup();
+      console.log('Refreshing group summary data');
+      
+      // Refresh data for the active tab
+      if (activeTab === "expenses") {
+        console.log('Refreshing expenses after screen focus');
+        fetchExpenses();
+        // Reset loaded flag to allow fresh data retrieval
+        setExpensesLoaded(false);
+      } else if (activeTab === "contributions") {
+        console.log('Refreshing contributions after screen focus');
+        fetchContributions();
+        setContributionsLoaded(false);
+      } else if (activeTab === "members") {
+        console.log('Refreshing members after screen focus');
+        fetchMembers();
+        setMembersLoaded(false);
+      } else if (activeTab === "polls") {
+        console.log('Refreshing polls after screen focus');
+        fetchPolls();
+        setPollsLoaded(false);
+      }
+      
+      console.log('Screen focus data refresh complete');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab])
+  );
     // Helper function to refresh current tab data
   const refreshCurrentTabData = useCallback(() => {
     switch (activeTab) {
@@ -189,9 +262,10 @@ const GroupDetailsScreen: React.FC = () => {
       default:
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    activeTab, fetchGroup, fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
-    setMembersLoaded, setExpensesLoaded, setContributionsLoaded, setPollsLoaded
+    activeTab
+    // Removed fetch functions and setState functions from dependencies to prevent potential infinite loops
   ]);
   
   // Handle pull-to-refresh

@@ -101,7 +101,7 @@ export const MemberList: React.FC<MemberListProps> = ({
                 <StyledView className="flex-row items-center">
                   <StyledView className={`h-2 w-2 rounded-full ${!member.isActive ? 'bg-danger' : 'bg-success'} mr-1`} />
                   <StyledText className={`${member.isAdmin ? 'text-primary font-bold' : 'text-lightText'} text-xs`}>
-                    {member.isAdmin ? 'Admin' : 'Player'} · {member.isActive ? 'Active' : 'Paused'}
+                    {member.isAdmin ? 'Admin' : 'Member'} · {member.isActive ? 'Active' : 'Paused'}
                   </StyledText>
                 </StyledView>
               </StyledView>
@@ -116,7 +116,7 @@ export const MemberList: React.FC<MemberListProps> = ({
                     "What would you like to do?",
                     [
                       {
-                        text: `Change to ${member.isAdmin ? 'Player' : 'Admin'}`,
+                        text: `Change to ${member.isAdmin ? 'Member' : 'Admin'}`,
                         onPress: () => onRoleChange && onRoleChange(member.id, !member.isAdmin)
                       },
                       {

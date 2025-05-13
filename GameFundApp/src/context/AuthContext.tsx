@@ -2,8 +2,8 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth.service';
-import { getAuthToken, setAuthToken } from '../services/api.service';
-import { tokenService } from '../services/token.service';
+import { Platform } from 'react-native';
+import { setAuthToken } from '../services/http.service';
 
 // Import types from models
 import { User as ApiUser } from '../models/user.model';
@@ -13,7 +13,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'player' | 'admin';
+  role: 'member' | 'admin';
   phoneNumber?: string;
 }
 
@@ -50,35 +50,34 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   useEffect(() => {
     const loadStoredAuthState = async () => {
       try {
+        console.log('🔑 Loading stored authentication state...');
+        
         // Load token and user data from AsyncStorage
         const token = await AsyncStorage.getItem(TOKEN_KEY);
         const userData = await AsyncStorage.getItem(USER_KEY);
 
-        console.log(`Auth state loaded: Token exists: ${!!token}, User exists: ${!!userData}`);
+        console.log(`🔑 Auth state loaded: Token exists: ${!!token}, User exists: ${!!userData}`);
 
         if (token && userData) {
-          // Set the token in the API service
-          setAuthToken(token);
-          
-          // Check if token is still valid
-          const isTokenValid = await tokenService.ensureValidToken();
-          if (!isTokenValid) {
-            console.log('Stored token has expired and could not be refreshed');
+          try {
+            // Set the token in the API service
+            setAuthToken(token);
+              // Parse the user data directly without validation
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+            console.log(`🔑 User authenticated: ${parsedUser.name} (${parsedUser.email})`);
+          } catch (parseError) {
+            console.error('🔑 Error parsing user data:', parseError);
             await clearAuthState();
             setAuthToken(null);
-            return;
           }
-          
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-          console.log(`User authenticated: ${parsedUser.name} (${parsedUser.email})`);
         } else {
-          console.log('No saved authentication found');
+          console.log('🔑 No saved authentication found');
           // Ensure token is cleared if no stored data
           setAuthToken(null);
         }
       } catch (error) {
-        console.error('Error loading auth state:', error);
+        console.error('🔑 Error loading auth state:', error);
         // Ensure token is cleared on error
         setAuthToken(null);
       } finally {
@@ -87,6 +86,35 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     };
 
     loadStoredAuthState();
+      // Add listener for auth failures that can happen anywhere in the app
+    const handleAuthFailure = () => {
+      console.log('🔑 Auth failure event received, logging out user');
+      logout();
+    };
+    
+    // Use AsyncStorage as a simple event bus since document is not available in React Native
+    const checkAuthFailureInterval = setInterval(async () => {
+      try {
+        const failureTime = await AsyncStorage.getItem('@GameFund:authFailure');
+        if (failureTime) {
+          const now = Date.now();
+          const failureTimeNum = parseInt(failureTime, 10);
+          
+          // Only process recent failures (within last 10 seconds)
+          if (now - failureTimeNum < 10000) {
+            console.log('🔑 Auth failure detected via AsyncStorage, logging out user');
+            await AsyncStorage.removeItem('@GameFund:authFailure');
+            logout();
+          }
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }, 2000);
+    
+    return () => {
+      clearInterval(checkAuthFailureInterval);
+    };
   }, []);
 
   // Save authentication state to AsyncStorage
@@ -124,7 +152,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         id: response.user.id,
         name: response.user.name,
         email: response.user.email,
-        role: response.user.role as 'player' | 'admin',
+        role: response.user.role as 'member' | 'admin',
       };
       
       setUser(userData);
@@ -151,7 +179,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         id: response.user.id,
         name: response.user.name,
         email: response.user.email,
-        role: response.user.role as 'player' | 'admin',
+        role: response.user.role as 'member' | 'admin',
       };
       
       setUser(userData);
@@ -171,22 +199,26 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     setUser(null);
     await clearAuthState();
   };
-    // Update user information
+  // Update user information
   const updateUserInfo = (updatedUser: Partial<User>) => {
     if (user) {
       // Merge the existing user with the updated fields
       const newUserData = { ...user, ...updatedUser };
       setUser(newUserData);
       
-      // Check if we have a valid token before saving
-      const currentToken = getAuthToken();
-      if (!currentToken) {
-        console.warn('⚠️ Attempting to update user info without a valid auth token');
-      }
-      
-      // Save the updated user to storage
-      saveAuthState(currentToken || '', newUserData);
-      console.log('👤 User info updated:', updatedUser);
+      // Get the current token directly from AsyncStorage
+      AsyncStorage.getItem(TOKEN_KEY).then(token => {
+        if (!token) {
+          console.warn('⚠️ Attempting to update user info without a valid auth token');
+          token = ''; // Use empty string as fallback
+        }
+        
+        // Save the updated user to storage
+        saveAuthState(token, newUserData);
+        console.log('👤 User info updated:', updatedUser);
+      }).catch(error => {
+        console.error('Error getting token for user update:', error);
+      });
     } else {
       console.warn('⚠️ Cannot update user info: No user is currently logged in');
     }

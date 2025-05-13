@@ -20,7 +20,13 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
-  GroupDetails: { groupId: string };
+  GroupDetails: { 
+    groupId: string;
+    expenseAdded?: boolean;
+    expenseAddedAt?: number;
+    contributionAdded?: boolean;
+    contributionAddedAt?: number;
+  };
   AddExpense: { groupId?: string };
   AddContribution: { groupId?: string };
   CreateGroup: undefined;

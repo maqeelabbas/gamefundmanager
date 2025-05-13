@@ -86,7 +86,7 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
             
             <StyledView className="flex-row justify-between mt-2">
               <StyledText className="text-gray-500 text-xs">
-                Paid by: {expense.createdByUser?.firstName} {expense.createdByUser?.lastName}
+                Paid by: {expense.paidByUser?.firstName} {expense.paidByUser?.lastName}
               </StyledText>
               <StyledText className="text-gray-500 text-xs">
                 {new Date(expense.expenseDate).toLocaleDateString()}

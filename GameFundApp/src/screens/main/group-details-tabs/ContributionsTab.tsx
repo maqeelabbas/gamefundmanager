@@ -77,7 +77,7 @@ export const ContributionsTab: React.FC<ContributionsTabProps> = ({
           >
             <StyledView className="flex-row justify-between">
               <StyledText className="font-medium text-gray-800">
-                {contribution.user?.firstName} {contribution.user?.lastName}
+                {contribution.contributorUser?.firstName} {contribution.contributorUser?.lastName}
               </StyledText>
               <StyledText className="font-bold text-green-500">
                 {currency} {contribution.amount.toFixed(2)}

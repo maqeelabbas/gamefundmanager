@@ -1,12 +1,12 @@
-import { User } from './user.model';
+import { User } from "./user.model";
 
 // Expense status enum matching backend ExpenseStatus
 export enum ExpenseStatus {
-  Proposed = 'Proposed',
-  Approved = 'Approved',
-  Rejected = 'Rejected',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled'
+  Proposed = "Proposed",
+  Approved = "Approved",
+  Rejected = "Rejected",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
 }
 
 // Expense model matching backend ExpenseDto
@@ -22,6 +22,8 @@ export interface Expense {
   groupId: string;
   createdByUserId: string;
   createdByUser?: User;
+  paidByUserId: string;
+  paidByUser?: User;
 }
 
 // Create expense request model matching backend CreateExpenseDto

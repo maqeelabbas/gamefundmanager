@@ -68,14 +68,22 @@ const AddContributionScreen: React.FC = () => {
         contributionDate: new Date(),
         groupId: selectedGroup,
         transactionReference: `CONTRIB-${Date.now()}`,
-      };
-
-      // Call the API to add the contribution
+      };      // Call the API to add the contribution
       await contributionService.addContribution(contributionData);
 
       // Show success message
       Alert.alert("Success", "Contribution added successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() },
+        { 
+          text: "OK", 
+          onPress: () => {
+            // Navigate back with refresh param
+            navigation.navigate('GroupDetails', {
+              groupId: selectedGroup,
+              contributionAdded: true,
+              contributionAddedAt: new Date().getTime()
+            });
+          } 
+        },
       ]);
     } catch (error) {
       // Handle errors

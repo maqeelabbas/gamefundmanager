@@ -22,7 +22,7 @@ Group Details → Members Tab
 
 - Add "Add Member" button.
 - Allow Admins/Group Managers to:
-  - Change role of member (between Player and Group Manager).
+  - Change role of member (between Member and Group Admin).
   - Select "Contribution Start Month" when adding a new member.
 - Allow Admins/Group Managers to pause a member’s contribution for a custom date range.
 - When calculating group contributions, exclude members with paused contribution status.
@@ -52,7 +52,7 @@ Group Details → Polls Tab
 - Polls should support:
   - Single-option selection polls.
   - Multi-option selection polls.
-- All members (Admins, Managers, Players) can vote in polls.
+- All members (Admins, Group Admin, Member) can vote in polls.
 
 ---
 
@@ -69,7 +69,7 @@ Acceptance Criteria
 - UI uses sporty colors and full-screen layout.
 - All buttons and actions work (no broken links or buttons).
 - Backend data updates reflect instantly in UI.
-- Roles and permissions enforced (Admins and Managers vs. Players).
+- Roles and permissions enforced (Admins and Group Admins vs. Members).
 - All UI text is readable (no disappearing text on color backgrounds).
 
 ---

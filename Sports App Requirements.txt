@@ -19,7 +19,7 @@ A cross-platform mobile app (iOS + Android) to manage sports group contributions
 
 ### 1. User Management
 
-* Roles: Player, Admin
+* Roles: Member, Group Admin, Admin
 * Features:
 
   * Registration/Login (Email/Phone, Google/Apple optional)
@@ -29,7 +29,7 @@ A cross-platform mobile app (iOS + Android) to manage sports group contributions
 ### 2. Group Management
 
 * Create/manage groups (Badminton, Cricket)
-* Players can join multiple groups
+* Members can join multiple groups
 * Each group has:
 
   * Members list
@@ -40,11 +40,11 @@ A cross-platform mobile app (iOS + Android) to manage sports group contributions
 
 ### 3. Contribution Tracking
 
-* Monthly contributions per player per group
+* Monthly contributions per member per group
 * Features:
 
   * Mark contributions (Paid/Pending/Adjusted)
-  * Player view of status
+  * Member view of status
   * Contribution reminders (push notifications)
 
 ### 4. Expense Tracking
@@ -53,7 +53,7 @@ A cross-platform mobile app (iOS + Android) to manage sports group contributions
 * Features:
 
   * Item name, amount, purchased by, date, notes
-  * Auto-adjust contributions when a player purchases
+  * Auto-adjust contributions when a member purchases
   * Transparent ledger per group
 
 ### 5. Reporting & Summary
@@ -61,7 +61,7 @@ A cross-platform mobile app (iOS + Android) to manage sports group contributions
 * Features:
 
   * Group financial summary (collected/spent/balance)
-  * Player-wise ledger
+  * Member-wise ledger
   * (Optional) Report export (PDF/Excel)
 
 ### 6. Polls

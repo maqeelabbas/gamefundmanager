@@ -53,8 +53,7 @@ const AddExpenseScreen: React.FC = () => {
   // Dropdown picker state - with zIndex management
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownItems, setDropdownItems] = useState<Array<{label: string, value: string, icon?: () => React.ReactNode}>>([]);
-  
-  // Fetch group members using useCallback to avoid recreation on every render
+    // Fetch group members using useCallback to avoid recreation on every render
   const fetchGroupMembers = useCallback(async () => {
     if (!groupId) {
       console.log('Cannot fetch members: No groupId provided');
@@ -81,12 +80,12 @@ const AddExpenseScreen: React.FC = () => {
       setDropdownItems(formattedMembers);
       
       // If no member is selected yet and we have members, select current user by default
-      if (members.length > 0) {
+      if (members.length > 0 && !selectedMemberId) {
         const currentUserMember = members.find(member => member.user.id === user?.id);
         if (currentUserMember) {
           console.log('Setting current user as selected member:', currentUserMember.user.id);
           setSelectedMemberId(currentUserMember.user.id);
-        } else if (!selectedMemberId) {
+        } else {
           console.log('Current user not found in group members, selecting first member');
           setSelectedMemberId(members[0].user.id);
         }
@@ -97,7 +96,7 @@ const AddExpenseScreen: React.FC = () => {
     } finally {
       setLoadingMembers(false);
     }
-  }, [groupId, user?.id, selectedMemberId]);
+  }, [groupId, user?.id]);
   
   // Navigate back if no groupId is provided and fetch members when component mounts
   useEffect(() => {
@@ -116,8 +115,7 @@ const AddExpenseScreen: React.FC = () => {
       fetchGroupMembers();
     }
   }, [groupId, navigation, fetchGroupMembers]);
-  
-  // Debug dropdown state changes
+    // Debug dropdown state changes
   useEffect(() => {
     console.log('Dropdown state changed:', {
       isOpen: dropdownOpen,
@@ -125,6 +123,11 @@ const AddExpenseScreen: React.FC = () => {
       availableMembers: groupMembers.length,
       itemsCount: dropdownItems.length
     });
+    
+    // When dropdown is closed after member selection, ensure we don't refetch unnecessarily
+    if (!dropdownOpen && selectedMemberId) {
+      console.log('Member selection completed, selected member ID:', selectedMemberId);
+    }
   }, [dropdownOpen, selectedMemberId, groupMembers.length, dropdownItems.length]);
   
   const handleAddExpense = async () => {
@@ -139,8 +142,7 @@ const AddExpenseScreen: React.FC = () => {
       if (!groupId) {
         throw new Error('No group selected for this expense');
       }
-      
-      // Prepare the expense data
+        // Prepare the expense data
       const expenseData: CreateExpenseRequest = {
         title,
         description: notes, // using notes as the description
@@ -151,14 +153,31 @@ const AddExpenseScreen: React.FC = () => {
       };
 
       // Call the actual expense service to create the expense
-      await expenseService.createExpense(expenseData);
+      console.log('Sending expense data to API:', JSON.stringify(expenseData, null, 2));
+      const createdExpense = await expenseService.createExpense(expenseData);
+      
+      console.log('API response for created expense:', JSON.stringify(createdExpense, null, 2));
+      
+      if (!createdExpense) {
+        throw new Error('Failed to create expense - no data returned from API');
+      }
       
       setIsLoading(false);
       Alert.alert(
         'Success',
         'Expense added successfully!',
         [
-          { text: 'OK', onPress: () => navigation.goBack() }
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Navigate back with refresh param
+              navigation.navigate('GroupDetails', {
+                groupId,
+                expenseAdded: true,
+                expenseAddedAt: new Date().getTime()
+              });
+            } 
+          }
         ]
       );
     } catch (error) {

@@ -146,8 +146,8 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               
               <StyledView className="flex-row justify-between mt-2">
                 <StyledText className="text-gray-500 text-xs">
-                  Paid by: {expense.createdByUser ? 
-                    `${expense.createdByUser.firstName} ${expense.createdByUser.lastName}` : 
+                  Paid by: {expense.paidByUser ? 
+                    `${expense.paidByUser.firstName} ${expense.paidByUser.lastName}` : 
                     'Unknown'}
                 </StyledText>
                 <StyledText className="text-gray-500 text-xs">
@@ -196,8 +196,8 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
             <StyledView key={contribution.id} className="bg-white p-4 rounded-xl shadow-sm mb-3">
               <StyledView className="flex-row justify-between">
                 <StyledText className="text-text font-bold">
-                  {contribution.user ? 
-                    `${contribution.user.firstName} ${contribution.user.lastName}` : 
+                  {contribution.contributorUser ? 
+                    `${contribution.contributorUser.firstName} ${contribution.contributorUser.lastName}` : 
                     'Unknown User'}
                 </StyledText>
                 <StyledText className="text-green-600 font-bold">

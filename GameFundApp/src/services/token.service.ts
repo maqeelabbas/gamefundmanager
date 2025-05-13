@@ -1,7 +1,8 @@
 // src/services/token.service.ts
-import { api, getAuthToken, setAuthToken } from './api.service';
 import { API_CONFIG, ApiResponse } from '../config/api.config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import { getAuthToken, setAuthToken } from './http.service';
 
 // Keys for AsyncStorage
 const TOKEN_KEY = '@GameFund:token';
@@ -13,22 +14,30 @@ interface TokenRefreshResponse {
   tokenExpires: string;
 }
 
-class TokenService {  // Check if token is expired or will expire soon
+class TokenService {
+  // Check if token is expired or will expire soon
   async isTokenExpired(): Promise<boolean> {
     try {
-      const tokenExpiryStr = await AsyncStorage.getItem(TOKEN_EXPIRY_KEY);
+      // First, check if we have a valid token
       const currentToken = getAuthToken();
+      if (!currentToken) {
+        console.log('🔑 No current token available to check expiry');
+        return true; // No token means it's effectively expired
+      }
+
+      const tokenExpiryStr = await AsyncStorage.getItem(TOKEN_EXPIRY_KEY);
+      const now = new Date();
       
       // Track if we've checked recently to avoid excessive checks
       const lastCheckStr = await AsyncStorage.getItem('@GameFund:lastExpiryCheck');
-      const now = new Date();
       
+      // Reduce checking frequency to avoid performance impact
       if (lastCheckStr) {
         const lastCheck = new Date(lastCheckStr);
         const timeSinceLastCheck = now.getTime() - lastCheck.getTime();
         
-        // If we checked within the last minute and it was valid, don't check again
-        if (timeSinceLastCheck < 60000) { // 1 minute
+        // If we checked within the last 30 seconds and it was valid, don't check again
+        if (timeSinceLastCheck < 30000) { // 30 seconds
           const lastResult = await AsyncStorage.getItem('@GameFund:lastExpiryResult');
           if (lastResult === 'valid') {
             console.log('🔑 Token was checked recently and was valid');
@@ -43,11 +52,11 @@ class TokenService {  // Check if token is expired or will expire soon
       if (!tokenExpiryStr) {
         console.log('🔑 No token expiry information found');
         
-        // Check if we have a current token - if so, set a default expiry time
+        // If we have a current token but no expiry info, set a conservative default
         if (currentToken) {
-          // Create an expiry date 24 hours from now as a fallback
+          // Create an expiry date 1 hour from now as a fallback (conservative)
           const defaultExpiry = new Date();
-          defaultExpiry.setHours(defaultExpiry.getHours() + 24);
+          defaultExpiry.setHours(defaultExpiry.getHours() + 1);
           
           console.log(`🔑 Setting default token expiry to: ${defaultExpiry.toISOString()}`);
           await this.saveTokenExpiry(defaultExpiry);
@@ -125,14 +134,17 @@ class TokenService {  // Check if token is expired or will expire soon
       console.log(`🔑 Token expiry saved: ${expiryString}`);
     } catch (error) {
       console.error('🔑 Error saving token expiry:', error);
-    }
-  }  // Refresh the auth token
+    }  }
+  
+  // Refresh the auth token
   async refreshToken(): Promise<boolean> {
     try {
+      console.log('🔄 Token refresh request initiated');
+      
       // First check if refresh is in progress by another request
       const refreshInProgress = await AsyncStorage.getItem('@GameFund:tokenRefreshInProgress');
       if (refreshInProgress === 'true') {
-        console.log('🔑 Another refresh operation is in progress, waiting...');
+        console.log('🔄 Another refresh operation is in progress, waiting...');
         
         // Wait for a short time to see if the other refresh completes
         return new Promise((resolve) => {
@@ -140,16 +152,28 @@ class TokenService {  // Check if token is expired or will expire soon
             const stillInProgress = await AsyncStorage.getItem('@GameFund:tokenRefreshInProgress');
             if (stillInProgress !== 'true') {
               clearInterval(checkInterval);
-              console.log('🔑 Using token that was refreshed by another request');
-              resolve(true);
+              
+              // Check if we have a valid token now
+              const token = getAuthToken();
+              if (token) {
+                console.log('🔄 Using token that was refreshed by another request');
+                resolve(true);
+              } else {
+                console.log('🔄 Other refresh process finished but no token available');
+                resolve(false);
+              }
             }
           }, 500);
           
           // Safety timeout after 5 seconds to prevent deadlock
           setTimeout(() => {
             clearInterval(checkInterval);
-            console.log('🔑 Timed out waiting for other refresh, proceeding with current token');
-            resolve(true);
+            clearRefreshInProgress();
+            console.log('🔄 Timed out waiting for other refresh, proceeding with current token');
+            
+            // Get current token state after timeout
+            const token = getAuthToken();
+            resolve(!!token);
           }, 5000);
         });
       }
@@ -157,14 +181,20 @@ class TokenService {  // Check if token is expired or will expire soon
       const currentToken = getAuthToken();
       
       if (!currentToken) {
-        console.error('🔑 No token available to refresh');
+        console.error('🔄 No token available to refresh');
         return false;
       }
       
-      console.log('🔑 Attempting to refresh token');
+      console.log('🔄 Attempting to refresh token');
       
       // Set flag indicating refresh is in progress
       await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'true');
+      
+      // Helper function to clear the in-progress flag
+      const clearRefreshInProgress = async () => {
+        await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false')
+          .catch(err => console.error('Error clearing refresh flag:', err));
+      };
       
       // Counter to prevent continuous refresh attempts with exponential backoff
       const refreshCountData = await AsyncStorage.getItem('@GameFund:tokenRefreshAttempts') || '{"count":0,"timestamp":0}';
@@ -232,85 +262,84 @@ class TokenService {  // Check if token is expired or will expire soon
       await AsyncStorage.setItem('@GameFund:tokenRefreshAttempts', JSON.stringify({
         count: attempts + 1,
         timestamp: now
-      }));
-      
-      try {
-        // Call the backend refresh token endpoint
-        const response = await api.post<ApiResponse<TokenRefreshResponse>>('/auth/refresh-token', {
-          token: currentToken
-        });
+      }));        try {
+          // Import the direct refresh function from a separate file to avoid circular dependencies
+          const { makeDirectRefreshRequest } = require('./direct-token-refresh');
+          
+          // Make sure we have a token to refresh
+          if (!currentToken) {
+            console.error('🔄 Cannot refresh token: No current token available');
+            await clearRefreshInProgress();
+            return false;
+          }
+          
+          // Call the backend refresh token endpoint using direct fetch
+          console.log('🔄 Attempting to refresh token');
+          const response = await makeDirectRefreshRequest(currentToken);
+          
+          if (response.success && response.token) {
+            console.log('🔄 Token refresh successful, got new token');
+            
+            // Update token in memory and storage
+            setAuthToken(response.token);
+            
+            // Save expiry information
+            if (response.tokenExpires) {
+              await this.saveTokenExpiry(response.tokenExpires);
+            } else {
+              // Set default expiry to 1 hour if not provided
+              const defaultExpiry = new Date();
+              defaultExpiry.setHours(defaultExpiry.getHours() + 1);
+              await this.saveTokenExpiry(defaultExpiry);
+            }
+            
+            // Reset attempts counter on success
+            await AsyncStorage.setItem('@GameFund:tokenRefreshAttempts', JSON.stringify({
+              count: 0,
+              timestamp: now
+            }));
+            
+            console.log('🔄 Token refreshed successfully');
+            
+            // Clear in-progress flag
+            await clearRefreshInProgress();
+            
+            return true;
+          } else {
+            console.error('🔄 Failed to refresh token, server returned failure');
+            
+            // Authentication failed completely - token is invalid
+            console.error('🔄 Token is invalid or expired and cannot be refreshed');
+            setAuthToken(null);            await clearRefreshInProgress();
+            return false;
+          }
+        } catch (error) {
+        console.error('🔑 Token refresh error:', error instanceof Error ? error.message : error);
         
-        if (response.data && response.data.token) {
-          // Update token in memory and storage
-          setAuthToken(response.data.token);
-          await AsyncStorage.setItem(TOKEN_KEY, response.data.token);
-          
-          // Save expiry information
-          await this.saveTokenExpiry(response.data.tokenExpires);
-          
-          // Reset attempts counter on success
-          await AsyncStorage.setItem('@GameFund:tokenRefreshAttempts', JSON.stringify({
-            count: 0,
-            timestamp: now
-          }));
-          
-          console.log('🔑 Token refreshed successfully');
-          
-          // Clear in-progress flag
-          await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
-          
-          return true;
-        } else {
-          console.error('🔑 Failed to refresh token:', response.message || 'Unknown error');
-          
-          // Handle token refresh failure - set a default expiry with backoff
-          const defaultExpiry = new Date();
-          const backoffHours = Math.min(1 * Math.pow(2, attempts), 24); // Exponential backoff, max 24 hours
-          defaultExpiry.setHours(defaultExpiry.getHours() + backoffHours);
-          await this.saveTokenExpiry(defaultExpiry);
-          
-          // Clear in-progress flag
-          await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
-          
-          return true; // Continue using the current token temporarily
-        }
-      } catch (error: any) {
-        console.error('🔑 Token refresh error:', error);
-        
-        // Check if we received a 401 Unauthorized response
-        const isAuthError = error.response?.status === 401;
-        
-        if (isAuthError) {
-          console.log('🔑 Token is invalid or cannot be refreshed');
-          
-          // Clear in-progress flag
-          await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
-          
-          return false; // Signal that the token is invalid
-        }
-        
-        console.log('🔑 Network or server error during token refresh');
-        
-        // Set a temporary default expiry with exponential backoff
-        const defaultExpiry = new Date();
-        const backoffHours = Math.min(6 * Math.pow(2, attempts - 1), 48); // More aggressive backoff for errors
-        defaultExpiry.setHours(defaultExpiry.getHours() + backoffHours);
-        await this.saveTokenExpiry(defaultExpiry);
+        // Clear auth token as it's likely invalid
+        setAuthToken(null);
         
         // Clear in-progress flag
-        await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
+        await clearRefreshInProgress();
         
-        return true; // Return true to continue using the current token
+        // Set a temporary default expiry with exponential backoff to prevent immediate retry
+        const defaultExpiry = new Date();
+        const backoffMinutes = Math.min(5 * Math.pow(2, attempts), 60); // Exponential backoff, max 60 minutes
+        defaultExpiry.setMinutes(defaultExpiry.getMinutes() + backoffMinutes);
+        await this.saveTokenExpiry(defaultExpiry);
+          console.log(`🔑 Token refresh failed, next attempt in ${backoffMinutes} minutes`);
+        return false;
       }
     } catch (error) {
       console.error('🔑 Token refresh error:', error);
       
       // Make sure to clear the in-progress flag even if an error occurs
       await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
-      
-      return false;
+        return false;
     }
-  }  // Validate and refresh token if needed before making API calls
+  }
+  
+  // Validate and refresh token if needed before making API calls
   async ensureValidToken(): Promise<boolean> {
     // We'll use this to store the lock release function
     let lockReleased = false;

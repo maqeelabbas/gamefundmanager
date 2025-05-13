@@ -1,5 +1,6 @@
 // src/hooks/useApi.ts
 import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Generic hook for API calls
 export function useApi<T, P = void>(
@@ -9,8 +10,7 @@ export function useApi<T, P = void>(
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  // Function to execute the API call
+  const [error, setError] = useState<Error | null>(null);  // Function to execute the API call
   const execute = useCallback(
     async (params?: P) => {
       try {
@@ -20,15 +20,21 @@ export function useApi<T, P = void>(
         const result = await apiFunction(params as P);
         setData(result);
         
-        return result;
-      } catch (err: any) {
-        console.error('API call error:', err.message || err);
+        return result;      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('API call error:', errorMessage);
         
         // Enhanced error handling
         let enhancedError: Error;
         
-        if (err.message && err.message.includes('401')) {
+        if (err instanceof Error && err.message && 
+            (err.message.includes('401') || err.message.includes('authentication'))) {
           enhancedError = new Error('Authentication error: Please log in again');
+          
+          // Trigger a global auth failure event to be caught by AuthContext          // Use AsyncStorage as an event bus for React Native
+          AsyncStorage.setItem('@GameFund:authFailure', Date.now().toString())
+            .then(() => console.log('Auth failure event triggered from useApi'))
+            .catch(err => console.error('Failed to trigger auth failure event:', err));
         } else {
           enhancedError = err as Error;
         }
