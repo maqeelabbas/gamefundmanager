@@ -1,9 +1,10 @@
-// src/screens/main/AddExpenseScreen.tsx
+// src/screens/main/AddExpenseScreen.fixed.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, ActivityIndicator } from 'react-native';
+import { Alert, ActivityIndicator, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { 
   StyledView, 
   StyledText, 
@@ -49,6 +50,10 @@ const AddExpenseScreen: React.FC = () => {
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(user?.id || null);
   
+  // Dropdown picker state - with zIndex management
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownItems, setDropdownItems] = useState<Array<{label: string, value: string, icon?: () => React.ReactNode}>>([]);
+  
   // Fetch group members using useCallback to avoid recreation on every render
   const fetchGroupMembers = useCallback(async () => {
     if (!groupId) {
@@ -57,6 +62,7 @@ const AddExpenseScreen: React.FC = () => {
     }
     
     console.log('Starting to fetch group members for group:', groupId);
+    console.log('Current user ID:', user?.id);
     setLoadingMembers(true);
     try {
       console.log('Calling groupService.getGroupMembers...');
@@ -65,6 +71,14 @@ const AddExpenseScreen: React.FC = () => {
       console.log('Members count:', members.length);
       
       setGroupMembers(members);
+      
+      // Format group members data for the dropdown
+      const formattedMembers = members.map(member => ({
+        label: `${member.user.firstName} ${member.user.lastName}${member.isAdmin ? ' (Admin)' : ''}${member.user.id === user?.id ? ' (You)' : ''}`,
+        value: member.user.id,
+      }));
+      
+      setDropdownItems(formattedMembers);
       
       // If no member is selected yet and we have members, select current user by default
       if (members.length > 0) {
@@ -102,6 +116,16 @@ const AddExpenseScreen: React.FC = () => {
       fetchGroupMembers();
     }
   }, [groupId, navigation, fetchGroupMembers]);
+  
+  // Debug dropdown state changes
+  useEffect(() => {
+    console.log('Dropdown state changed:', {
+      isOpen: dropdownOpen,
+      selectedValue: selectedMemberId,
+      availableMembers: groupMembers.length,
+      itemsCount: dropdownItems.length
+    });
+  }, [dropdownOpen, selectedMemberId, groupMembers.length, dropdownItems.length]);
   
   const handleAddExpense = async () => {
     if (!title || !amount || !selectedCategory || !selectedMemberId) {
@@ -163,7 +187,7 @@ const AddExpenseScreen: React.FC = () => {
         </StyledView>
       </StyledView>
       
-      <StyledScrollView className="flex-1 p-4">
+      <StyledScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 100 }}>
         <StyledView className="bg-white p-6 rounded-xl shadow-sm mb-4">
           {/* Title Input */}
           <StyledText className="text-sm font-medium text-text mb-2">Expense Title *</StyledText>
@@ -202,71 +226,108 @@ const AddExpenseScreen: React.FC = () => {
             ))}
           </StyledView>
           
-          {/* Paid By Selection - Debug Info */}
-          <StyledView>
+          {/* Paid By Selection - Dropdown Picker */}
+          <View style={{ marginBottom: 16, zIndex: 5000 }}>
             <StyledText className="text-sm font-medium text-text mb-2">Paid By *</StyledText>
-            <StyledText className="text-xs text-gray-500 mb-2">
-              Members loaded: {groupMembers.length}, Loading: {loadingMembers ? 'Yes' : 'No'}
-            </StyledText>
             
             {loadingMembers ? (
-              <StyledView className="items-center py-4 mb-4">
+              <StyledView className="items-center py-4">
                 <StyledActivityIndicator size="small" color="#0d7377" />
                 <StyledText className="text-gray-500 mt-2">Loading members...</StyledText>
               </StyledView>
             ) : groupMembers.length > 0 ? (
-              <StyledView className="mb-4">
-                {groupMembers.map(member => (
-                  <StyledTouchableOpacity
-                    key={member.user.id}
-                    className={`border p-3 rounded-lg mb-2 ${
-                      selectedMemberId === member.user.id ? 'border-primary bg-primary bg-opacity-10' : 'border-gray-300'
-                    }`}
-                    onPress={() => setSelectedMemberId(member.user.id)}
-                  >
-                    <StyledText 
-                      className={`${selectedMemberId === member.user.id ? 'text-primary font-medium' : 'text-text'}`}
-                    >
-                      {member.user.firstName} {member.user.lastName}
-                      {member.isAdmin ? ' (Admin)' : ''}
-                      {member.user.id === user?.id ? ' (You)' : ''}
-                    </StyledText>
-                  </StyledTouchableOpacity>
-                ))}
-              </StyledView>
+              <DropDownPicker
+                open={dropdownOpen}
+                value={selectedMemberId}
+                items={dropdownItems}
+                setOpen={setDropdownOpen}
+                setValue={setSelectedMemberId}
+                setItems={setDropdownItems}
+                placeholder="Select who paid for this expense"
+                searchable={true}
+                searchPlaceholder="Search for a member..."
+                listMode="SCROLLVIEW"
+                scrollViewProps={{ nestedScrollEnabled: true }}
+                style={{
+                  backgroundColor: 'white',
+                  borderColor: '#d1d5db',
+                  borderRadius: 8,
+                  minHeight: 50,
+                }}
+                textStyle={{
+                  fontSize: 14,
+                  color: '#333333',
+                }}
+                dropDownContainerStyle={{
+                  backgroundColor: 'white',
+                  borderColor: '#d1d5db',
+                  borderTopWidth: 0,
+                  borderBottomLeftRadius: 8,
+                  borderBottomRightRadius: 8,
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                }}
+                listItemContainerStyle={{
+                  height: 40,
+                }}
+                searchContainerStyle={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#d1d5db',
+                  padding: 8,
+                }}
+                searchTextInputStyle={{
+                  borderWidth: 0,
+                  fontSize: 14,
+                }}
+                zIndex={5000}
+                zIndexInverse={1000}
+              />
             ) : (
-              <StyledView className="bg-white border border-gray-300 rounded-lg p-4 mb-4 items-center">
+              <StyledView className="bg-white border border-gray-300 rounded-lg p-4 items-center">
                 <StyledText className="text-gray-500">No members found</StyledText>
+                <StyledText className="text-xs text-gray-500 mb-2">
+                  Debug: Members loaded: {groupMembers.length}, Dropdown items: {dropdownItems.length}
+                </StyledText>
                 <StyledTouchableOpacity 
                   className="bg-primary py-2 px-4 rounded-lg mt-2"
-                  onPress={fetchGroupMembers}
+                  onPress={() => {
+                    console.log('Manual retry triggered');
+                    fetchGroupMembers();
+                  }}
                 >
                   <StyledText className="text-white">Retry Loading Members</StyledText>
                 </StyledTouchableOpacity>
               </StyledView>
             )}
-          </StyledView>
+          </View>
           
-          {/* Notes Input */}
-          <StyledText className="text-sm font-medium text-text mb-2">Notes (Optional)</StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4 text-text h-24"
-            placeholder="Add any additional notes"
-            multiline
-            value={notes}
-            onChangeText={setNotes}
-            textAlignVertical="top"
-          />
+          {/* Notes Input - Lower z-index to appear below dropdown */}
+          <View style={{ zIndex: 1, marginTop: 16 }}>
+            <StyledText className="text-sm font-medium text-text mb-2">Notes (Optional)</StyledText>
+            <StyledTextInput
+              className="border border-gray-300 rounded-lg p-3 mb-4 text-text h-24"
+              placeholder="Add any additional notes"
+              multiline
+              value={notes}
+              onChangeText={setNotes}
+              textAlignVertical="top"
+            />
+          </View>
           
-          <StyledTouchableOpacity
-            className={`rounded-lg p-4 ${isLoading ? 'bg-gray-400' : 'bg-primary'} items-center`}
-            onPress={handleAddExpense}
-            disabled={isLoading}
-          >
-            <StyledText className="text-white font-bold">
-              {isLoading ? 'Adding...' : 'Add Expense'}
-            </StyledText>
-          </StyledTouchableOpacity>
+          <View style={{ zIndex: 1 }}>
+            <StyledTouchableOpacity
+              className={`rounded-lg p-4 ${isLoading ? 'bg-gray-400' : 'bg-primary'} items-center`}
+              onPress={handleAddExpense}
+              disabled={isLoading}
+            >
+              <StyledText className="text-white font-bold">
+                {isLoading ? 'Adding...' : 'Add Expense'}
+              </StyledText>
+            </StyledTouchableOpacity>
+          </View>
         </StyledView>
       </StyledScrollView>
     </StyledView>
