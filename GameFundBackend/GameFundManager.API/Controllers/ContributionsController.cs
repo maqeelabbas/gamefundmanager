@@ -1,9 +1,9 @@
 using GameFundManager.Application.DTOs;
 using GameFundManager.Application.Interfaces;
 using GameFundManager.API.Swagger;
+using GameFundManager.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace GameFundManager.API.Controllers
@@ -82,27 +82,26 @@ namespace GameFundManager.API.Controllers
         {
             var response = await _contributionService.GetContributionByIdAsync(id);
             return HandleApiResponse(response);
-        }
-
-        /// <summary>
+        }        /// <summary>
         /// Add a new contribution to a group
         /// </summary>
-        /// <param name="contributionDto">Contribution details</param>
+        /// <param name="contributionDto">Contribution details. If contributorUserId is provided, the contribution will be recorded for that user. Admins can create contributions for other users.</param>
         /// <returns>Created contribution details</returns>
         [HttpPost]
         [SwaggerOperation(
             Summary = "Add a contribution",
-            Description = "Creates a new contribution to a group by the current user",
+            Description = "Creates a new contribution to a group. Group admins can create contributions for other users by specifying contributorUserId.",
             OperationId = "AddContribution",
             Tags = new[] { "Contributions" }
         )]
         [SwaggerResponse(201, "Contribution added successfully")]
         [SwaggerResponse(400, "Invalid contribution information")]
-        [SwaggerResponse(404, "Group not found")]
+        [SwaggerResponse(403, "Not authorized to add contribution for other users")]
+        [SwaggerResponse(404, "Group or user not found")]
         [SwaggerResponse(401, "Unauthorized access")]
         public async Task<IActionResult> AddContribution(
             [FromBody, SwaggerExample(
-                "{\"groupId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"amount\":50.00,\"notes\":\"Monthly contribution\",\"paymentMethod\":\"CreditCard\"}", 
+                "{\"groupId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"amount\":50.00,\"description\":\"Monthly contribution\",\"paymentMethod\":\"CreditCard\",\"contributorUserId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\"}", 
                 "Contribution details")]
             CreateContributionDto contributionDto)
         {
@@ -114,9 +113,7 @@ namespace GameFundManager.API.Controllers
             var userId = GetCurrentUserId();
             var response = await _contributionService.AddContributionAsync(contributionDto, userId);
             return HandleApiResponse(response);
-        }
-
-        /// <summary>
+        }/// <summary>
         /// Delete a contribution
         /// </summary>
         /// <param name="id">Contribution ID to delete</param>
@@ -138,6 +135,90 @@ namespace GameFundManager.API.Controllers
         {
             var userId = GetCurrentUserId();
             var response = await _contributionService.DeleteContributionAsync(id, userId);
+            return HandleApiResponse(response);
+        }
+        
+        /// <summary>
+        /// Get contributions by status for a specific group
+        /// </summary>
+        /// <param name="groupId">Group ID to retrieve contributions for</param>
+        /// <param name="status">Contribution status to filter by</param>
+        /// <returns>List of contributions with specified status</returns>
+        [HttpGet("group/{groupId}/status/{status}")]
+        [SwaggerOperation(
+            Summary = "Get contributions by status", 
+            Description = "Returns contributions for a specific group filtered by status (Pending, Paid, Rejected, etc.)",
+            OperationId = "GetContributionsByStatus",
+            Tags = new[] { "Contributions" }
+        )]
+        [SwaggerResponse(200, "Filtered contributions retrieved successfully")]
+        [SwaggerResponse(404, "Group not found")]
+        [SwaggerResponse(401, "Unauthorized access")]
+        public async Task<IActionResult> GetContributionsByStatus(
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "Group ID to retrieve contributions for")]
+            Guid groupId, 
+            [SwaggerExample("Pending", "Contribution status (Pending, Paid, Rejected, etc.)")]
+            ContributionStatus status)
+        {
+            var response = await _contributionService.GetContributionsByStatusAsync(groupId, status);
+            return HandleApiResponse(response);
+        }
+        
+        /// <summary>
+        /// Update the status of a contribution
+        /// </summary>
+        /// <param name="id">Contribution ID to update</param>
+        /// <param name="status">New contribution status</param>
+        /// <returns>Updated contribution details</returns>
+        [HttpPut("{id}/status/{status}")]
+        [SwaggerOperation(
+            Summary = "Update contribution status",
+            Description = "Updates the status of a contribution to Paid, Pending, Rejected, etc. Only the contribution creator or a group admin can update contribution status.",
+            OperationId = "UpdateContributionStatus",
+            Tags = new[] { "Contributions" }
+        )]
+        [SwaggerResponse(200, "Contribution status updated successfully")]
+        [SwaggerResponse(403, "Not authorized to update this contribution")]
+        [SwaggerResponse(404, "Contribution not found")]
+        [SwaggerResponse(401, "Unauthorized access")]
+        public async Task<IActionResult> UpdateContributionStatus(
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "Contribution ID to update")]
+            Guid id, 
+            [SwaggerExample("Paid", "New contribution status (Paid, Pending, Rejected, etc.)")]
+            ContributionStatus status)
+        {
+            var userId = GetCurrentUserId();
+            var response = await _contributionService.UpdateContributionStatusAsync(id, status, userId);
+            return HandleApiResponse(response);
+        }
+        
+
+        /// <summary>
+        /// Get contributions created by a specific user in a group with a specific status
+        /// </summary>
+        /// <param name="groupId">Group ID to retrieve contributions for</param>
+        /// <param name="userId">User ID who created the contributions</param>
+        /// <param name="status">Contribution status to filter by</param>
+        /// <returns>List of contributions created by the specified user with the specified status</returns>
+        [HttpGet("group/{groupId}/user/{userId}/status/{status}")]
+        [SwaggerOperation(
+            Summary = "Get contributions by user and status",
+            Description = "Returns contributions created by a specific user in a group filtered by status",
+            OperationId = "GetGroupContributionsByUserAndStatus",
+            Tags = new[] { "Contributions" }
+        )]
+        [SwaggerResponse(200, "User's filtered contributions retrieved successfully")]
+        [SwaggerResponse(404, "Group not found")]
+        [SwaggerResponse(401, "Unauthorized access")]
+        public async Task<IActionResult> GetGroupContributionsByUserAndStatus(
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "Group ID to retrieve contributions for")]
+            Guid groupId,
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "User ID who contributed to the group")]
+            Guid userId,
+            [SwaggerExample("Pending", "Contribution status (Pending, Paid, or Cancelled)")]
+            ContributionStatus status)
+        {
+            var response = await _contributionService.GetGroupContributionsByUserAndStatusAsync(groupId, userId, status);
             return HandleApiResponse(response);
         }
     }

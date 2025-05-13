@@ -5,7 +5,6 @@ using GameFundManager.API.Swagger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace GameFundManager.API.Controllers
 {
@@ -173,6 +172,61 @@ namespace GameFundManager.API.Controllers
         {
             var userId = GetCurrentUserId();
             var response = await _expenseService.DeleteExpenseAsync(id, userId);
+            return HandleApiResponse(response);
+        }
+
+        /// <summary>
+        /// Get expenses created by a specific user in a group
+        /// </summary>
+        /// <param name="groupId">Group ID to retrieve expenses for</param>
+        /// <param name="userId">User ID who created the expenses</param>
+        /// <returns>List of expenses created by the specified user in the group</returns>
+        [HttpGet("group/{groupId}/user/{userId}")]
+        [SwaggerOperation(
+            Summary = "Get expenses by user", 
+            Description = "Returns expenses created by a specific user in a group",
+            OperationId = "GetGroupExpensesByUser",
+            Tags = new[] { "Expenses" }
+        )]
+        [SwaggerResponse(200, "User's expenses retrieved successfully")]
+        [SwaggerResponse(404, "Group not found")]
+        [SwaggerResponse(401, "Unauthorized access")]
+        public async Task<IActionResult> GetGroupExpensesByUser(
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "Group ID to retrieve expenses for")]
+            Guid groupId,
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "User ID who created the expenses")]
+            Guid userId)
+        {
+            var response = await _expenseService.GetGroupExpensesByUserAsync(groupId, userId);
+            return HandleApiResponse(response);
+        }
+
+        /// <summary>
+        /// Get expenses created by a specific user in a group with a specific status
+        /// </summary>
+        /// <param name="groupId">Group ID to retrieve expenses for</param>
+        /// <param name="userId">User ID who created the expenses</param>
+        /// <param name="status">Expense status to filter by</param>
+        /// <returns>List of expenses created by the specified user with the specified status</returns>
+        [HttpGet("group/{groupId}/user/{userId}/status/{status}")]
+        [SwaggerOperation(
+            Summary = "Get expenses by user and status", 
+            Description = "Returns expenses created by a specific user in a group filtered by status",
+            OperationId = "GetGroupExpensesByUserAndStatus",
+            Tags = new[] { "Expenses" }
+        )]
+        [SwaggerResponse(200, "User's filtered expenses retrieved successfully")]
+        [SwaggerResponse(404, "Group not found")]
+        [SwaggerResponse(401, "Unauthorized access")]
+        public async Task<IActionResult> GetGroupExpensesByUserAndStatus(
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "Group ID to retrieve expenses for")]
+            Guid groupId,
+            [SwaggerExample("3fa85f64-5717-4562-b3fc-2c963f66afa6", "User ID who created the expenses")]
+            Guid userId,
+            [SwaggerExample("Pending", "Expense status (Proposed, Approved, or Rejected)")]
+            ExpenseStatus status)
+        {
+            var response = await _expenseService.GetGroupExpensesByUserAndStatusAsync(groupId, userId, status);
             return HandleApiResponse(response);
         }
     }

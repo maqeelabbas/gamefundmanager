@@ -10,10 +10,12 @@ namespace GameFundManager.Application.DTOs
         public decimal Amount { get; set; }
         public DateTime ExpenseDate { get; set; }
         public ExpenseStatus Status { get; set; }
-        public string StatusName => Status.ToString();
+        public string StatusName { get; set; } = string.Empty;
         public string? ReceiptUrl { get; set; }
         public Guid GroupId { get; set; }
         public Guid CreatedByUserId { get; set; }
-        public UserDto CreatedByUser { get; set; } = null!;
+        public required UserDto CreatedByUser { get; set; } // Added required modifier
+        public Guid PaidByUserId { get; set; }  // Add this field
+        public required UserDto PaidByUser { get; set; }  // Added required modifier
     }
 }

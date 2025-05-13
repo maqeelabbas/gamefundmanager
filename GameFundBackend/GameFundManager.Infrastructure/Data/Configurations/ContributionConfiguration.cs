@@ -23,9 +23,26 @@ namespace GameFundManager.Infrastructure.Data.Configurations
                 
             builder.Property(c => c.PaymentMethod)
                 .HasMaxLength(50);
-                
-            builder.Property(c => c.TransactionReference)
+                  builder.Property(c => c.TransactionReference)
                 .HasMaxLength(100);
+                  builder.Property(c => c.Status)
+                .IsRequired()
+                .HasConversion<string>();
+            
+            // Configure relationships
+            builder.HasOne(c => c.Group)
+                .WithMany()
+                .HasForeignKey(c => c.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+                  builder.HasOne(c => c.ContributorUser)
+                .WithMany()
+                .HasForeignKey(c => c.ContributorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            builder.HasOne(c => c.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -26,21 +26,26 @@ namespace GameFundManager.Infrastructure.Repositories
                 .Include(g => g.Members)
                 .ThenInclude(gm => gm.User)
                 .FirstOrDefaultAsync(g => g.Id == groupId);
-                
+
             if (group == null)
                 return Enumerable.Empty<User>();
-                
+
             return group.Members
                 .Where(gm => gm.IsActive)
                 .Select(gm => gm.User)
                 .ToList();
-        }
-
-        public async Task<IEnumerable<Contribution>> GetGroupContributionsAsync(Guid groupId)
+        }        public async Task<IEnumerable<Contribution>> GetGroupContributionsAsync(Guid groupId)
         {
             return await _context.Contributions
-                .Include(c => c.User)
+                .Include(c => c.ContributorUser)
                 .Where(c => c.GroupId == groupId)
+                .OrderByDescending(c => c.ContributionDate)
+                .ToListAsync();
+        }        public async Task<IEnumerable<Contribution>> GetGroupContributionsByUserAsync(Guid groupId, Guid contributorUserId)
+        {
+            return await _context.Contributions
+                .Include(c => c.ContributorUser)
+                .Where(c => c.GroupId == groupId && c.ContributorUserId == contributorUserId)
                 .OrderByDescending(c => c.ContributionDate)
                 .ToListAsync();
         }
@@ -49,6 +54,7 @@ namespace GameFundManager.Infrastructure.Repositories
         {
             return await _context.Expenses
                 .Include(e => e.CreatedByUser)
+                .Include(e => e.PaidByUser)  // Add this to include PaidByUser
                 .Where(e => e.GroupId == groupId)
                 .OrderByDescending(e => e.ExpenseDate)
                 .ToListAsync();

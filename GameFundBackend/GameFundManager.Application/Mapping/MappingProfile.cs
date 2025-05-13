@@ -25,18 +25,23 @@ namespace GameFundManager.Application.Mapping
 
             // Contribution mappings
             CreateMap<Contribution, ContributionDto>();
-            CreateMap<CreateContributionDto, Contribution>();
-
+            CreateMap<CreateContributionDto, Contribution>();            
+            
             // Expense mappings
-            CreateMap<Expense, ExpenseDto>();
             CreateMap<CreateExpenseDto, Expense>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ExpenseStatus.Proposed));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ExpenseStatus.Proposed))
+                .ForMember(dest => dest.PaidByUserId, opt => opt.MapFrom(src => src.PaidByUserId));
+            
+            CreateMap<Expense, ExpenseDto>()
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.PaidByUser, opt => opt.MapFrom(src => src.PaidByUser))
+                .ForMember(dest => dest.CreatedByUser, opt => opt.MapFrom(src => src.CreatedByUser));
 
             // Poll mappings
             CreateMap<Poll, PollDto>()
                 .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options))
                 .ForMember(dest => dest.TotalVotes, opt => opt.MapFrom(src => src.Votes.Count));
-            
+
             CreateMap<CreatePollDto, Poll>();
 
             // PollOption mappings

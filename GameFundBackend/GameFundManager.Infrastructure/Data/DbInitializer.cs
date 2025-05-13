@@ -141,7 +141,9 @@ namespace GameFundManager.Infrastructure.Data
                         ContributionDate = DateTime.UtcNow.AddDays(-10),
                         PaymentMethod = "Cash",
                         GroupId = group.Id,
-                        UserId = adminUser.Id,
+                        Status = ContributionStatus.Paid,
+                        ContributorUserId = adminUser.Id,
+                        CreatedByUserId = adminUser.Id,
                         CreatedAt = DateTime.UtcNow.AddDays(-10)
                     },
                     new Contribution
@@ -152,7 +154,9 @@ namespace GameFundManager.Infrastructure.Data
                         ContributionDate = DateTime.UtcNow.AddDays(-7),
                         PaymentMethod = "Bank Transfer",
                         GroupId = group.Id,
-                        UserId = regularUser1.Id,
+                        Status = ContributionStatus.Paid,
+                        ContributorUserId = regularUser1.Id,
+                        CreatedByUserId = adminUser.Id,
                         CreatedAt = DateTime.UtcNow.AddDays(-7)
                     }
                 };
@@ -160,20 +164,33 @@ namespace GameFundManager.Infrastructure.Data
                 await context.Contributions.AddRangeAsync(contributions);
 
                 // Add an expense
-                var expense = new Expense
+                await context.Expenses.AddAsync(new Expense
                 {
                     Id = Guid.NewGuid(),
                     Title = "New Cricket Balls",
-                    Description = "Purchase of 5 new Cricket Balls for the team",
+                    Description = "Purchase of 2 new Cricket Bats for the team",
                     Amount = 150,
                     ExpenseDate = DateTime.UtcNow.AddDays(-5),
                     Status = ExpenseStatus.Approved,
                     GroupId = group.Id,
                     CreatedByUserId = adminUser.Id,
+                    PaidByUserId = regularUser1.Id,
                     CreatedAt = DateTime.UtcNow.AddDays(-5)
-                };
+                });
 
-                await context.Expenses.AddAsync(expense);
+                await context.Expenses.AddAsync(new Expense
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "New Cricket Balls",
+                    Description = "Purchase of 10 new Cricket Balls for the team",
+                    Amount = 30,
+                    ExpenseDate = DateTime.UtcNow.AddDays(-5),
+                    Status = ExpenseStatus.Approved,
+                    GroupId = group.Id,
+                    CreatedByUserId = adminUser.Id,
+                    PaidByUserId = regularUser2.Id,
+                    CreatedAt = DateTime.UtcNow.AddDays(-4)
+                });
 
                 await context.SaveChangesAsync();
                 logger.LogInformation("Database seeded successfully");

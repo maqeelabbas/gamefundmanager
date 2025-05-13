@@ -43,15 +43,14 @@ namespace GameFundManager.Infrastructure.Data.Configurations
                 .WithOne(g => g.Owner)
                 .HasForeignKey(g => g.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
-                
-            builder.HasMany(u => u.Memberships)
+                  builder.HasMany(u => u.Memberships)
                 .WithOne(gm => gm.User)
                 .HasForeignKey(gm => gm.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
                 
             builder.HasMany(u => u.Contributions)
-                .WithOne(c => c.User)
-                .HasForeignKey(c => c.UserId)
+                .WithOne(c => c.ContributorUser)
+                .HasForeignKey(c => c.ContributorUserId)
                 .OnDelete(DeleteBehavior.Restrict);
                 
             builder.HasMany(u => u.Expenses)

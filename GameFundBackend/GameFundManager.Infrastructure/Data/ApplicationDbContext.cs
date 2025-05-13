@@ -23,8 +23,7 @@ namespace GameFundManager.Infrastructure.Data
             
             // Apply configurations from the current assembly
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-            
-            // Manually configure PollVote relationships to avoid multiple cascade paths
+              // Manually configure PollVote relationships to avoid multiple cascade paths
             modelBuilder.Entity<PollVote>()
                 .HasOne(pv => pv.Poll)
                 .WithMany(p => p.Votes)
@@ -33,7 +32,7 @@ namespace GameFundManager.Infrastructure.Data
                 
             modelBuilder.Entity<PollVote>()
                 .HasOne(pv => pv.User)
-                .WithMany()
+                .WithMany(u => u.PollVotes)
                 .HasForeignKey(pv => pv.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
                 
@@ -46,7 +45,7 @@ namespace GameFundManager.Infrastructure.Data
             // Configure other relationships with cascade delete to avoid multiple paths
             modelBuilder.Entity<Poll>()
                 .HasOne(p => p.Group)
-                .WithMany()
+                .WithMany(g => g.Polls)
                 .HasForeignKey(p => p.GroupId)
                 .OnDelete(DeleteBehavior.NoAction);
                 

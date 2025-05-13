@@ -8,5 +8,6 @@ namespace GameFundManager.Application.DTOs
         public DateTime ExpenseDate { get; set; }
         public string? ReceiptUrl { get; set; }
         public Guid GroupId { get; set; }
+        public Guid PaidByUserId { get; set; }  // Add this field
     }
 }
