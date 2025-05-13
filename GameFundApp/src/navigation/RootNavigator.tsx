@@ -11,7 +11,7 @@ import MainNavigator from './MainNavigator';
 
 // Import Screens
 import GroupDetailsScreen from '../screens/main/GroupDetailsScreen';
-import AddExpenseScreen from '../screens/main/AddExpenseScreen.new';
+import AddExpenseScreen from '../screens/main/AddExpenseScreen';
 import AddContributionScreen from '../screens/main/AddContributionScreen';
 import CreateGroupScreen from '../screens/main/CreateGroupScreen';
 import UserDetailsScreen from '../screens/main/UserDetailsScreen';
