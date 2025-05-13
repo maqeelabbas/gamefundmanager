@@ -169,12 +169,12 @@ const AddExpenseScreen: React.FC = () => {
         [
           { 
             text: 'OK', 
-            onPress: () => {
-              // Navigate back with refresh param
+            onPress: () => {              // Navigate back with refresh param and explicitly set active tab
               navigation.navigate('GroupDetails', {
                 groupId,
                 expenseAdded: true,
-                expenseAddedAt: new Date().getTime()
+                expenseAddedAt: new Date().getTime(),
+                initialTab: 'expenses' // Force switch to expenses tab using the type-safe parameter we added
               });
             } 
           }

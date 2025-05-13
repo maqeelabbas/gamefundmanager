@@ -19,13 +19,13 @@ export type MainTabParamList = {
 // Root Navigator Types
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;
-  GroupDetails: { 
+  Main: NavigatorScreenParams<MainTabParamList>;  GroupDetails: { 
     groupId: string;
     expenseAdded?: boolean;
     expenseAddedAt?: number;
     contributionAdded?: boolean;
     contributionAddedAt?: number;
+    initialTab?: string; // Added to support forcing specific tab on navigation
   };
   AddExpense: { groupId?: string };
   AddContribution: { groupId?: string };

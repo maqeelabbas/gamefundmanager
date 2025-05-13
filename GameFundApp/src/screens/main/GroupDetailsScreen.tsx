@@ -77,7 +77,8 @@ const GroupDetailsScreen: React.FC = () => {
   // Track the last processed timestamps to prevent duplicate refreshes
   const [lastProcessedExpenseTimestamp, setLastProcessedExpenseTimestamp] = useState<number | undefined>(undefined);
   const [lastProcessedContributionTimestamp, setLastProcessedContributionTimestamp] = useState<number | undefined>(undefined);
-    // Watch route params to refresh data when returning from add screens with success  
+
+  // Watch route params to refresh data when returning from add screens with success
   useEffect(() => {
     if (expenseAdded && expenseAddedAt && expenseAddedAt !== lastProcessedExpenseTimestamp) {
       console.log('Expense added, refreshing expense data...', expenseAddedAt);
@@ -87,27 +88,42 @@ const GroupDetailsScreen: React.FC = () => {
       // Always refresh expense data when an expense is added
       fetchExpenses();
       
+      // Also refresh contributions data to keep the summary view consistent
+      fetchContributions();
+      
       // Mark this expense addition as processed
       setLastProcessedExpenseTimestamp(expenseAddedAt);
       
       // Reset the loaded flags to ensure fresh data on tab selection
       setExpensesLoaded(false);
+      setContributionsLoaded(false);
       
-      console.log('Expense data refresh complete');
+      // Switch to expenses tab to show the newly added expense
+      setActiveTab("expenses");
+      
+      console.log('Expense data refresh complete and switched to expenses tab');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenseAdded, expenseAddedAt, lastProcessedExpenseTimestamp]);
-
   useEffect(() => {
     if (contributionAdded && contributionAddedAt && contributionAddedAt !== lastProcessedContributionTimestamp) {
       console.log('Contribution added, refreshing contribution data...', contributionAddedAt);
+      // Force refresh group data regardless of tab
+      fetchGroup();
+      
+      // Always refresh contribution data when a contribution is added
       fetchContributions();
+      
+      // Mark this contribution addition as processed
       setLastProcessedContributionTimestamp(contributionAddedAt);
       
-      // If summary tab is active, refresh it too
-      if (activeTab === 'summary') {
-        fetchGroup();
-      }
+      // Reset the loaded flags to ensure fresh data on tab selection
+      setContributionsLoaded(false);
+      
+      // Switch to contributions tab to show the newly added contribution
+      setActiveTab("contributions");
+      
+      console.log('Contribution data refresh complete and switched to contributions tab');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contributionAdded, contributionAddedAt, lastProcessedContributionTimestamp]);
@@ -175,8 +191,25 @@ const GroupDetailsScreen: React.FC = () => {
         targetAmount: group.targetAmount,
         currency: group.currency
       });
-    }  }, [group]);
-    // Load data for the active tab when it changes - with data already loaded tracking
+    }
+  }, [group]);
+
+  // Initial data loading - load expenses and contributions on component mount regardless of tab
+  useEffect(() => {
+    // Fetch initial data for summary tab on component mount
+    if (groupId) {
+      console.log('Initial data loading for summary tab');
+      fetchExpenses();
+      fetchContributions();
+      
+      // Mark them as loaded so the tab change effect doesn't reload them unnecessarily
+      setExpensesLoaded(true);
+      setContributionsLoaded(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
+  
+  // Load data for the active tab when it changes - with data already loaded tracking
   const [membersLoaded, setMembersLoaded] = useState(false);
   const [expensesLoaded, setExpensesLoaded] = useState(false);
   const [contributionsLoaded, setContributionsLoaded] = useState(false);
