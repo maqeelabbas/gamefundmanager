@@ -166,12 +166,12 @@ export const MemberList: React.FC<MemberListProps> = ({
             >
               <StyledText className="text-primary text-sm">Message</StyledText>
             </StyledTouchableOpacity>
-            
-            <StyledTouchableOpacity
+              <StyledTouchableOpacity
               onPress={() => {
                 if (onMemberPress) {
                   onMemberPress(member);
                 } else {
+                  // If no custom handler is provided, show the default alert
                   const memberName = member.user ? `${member.user.firstName} ${member.user.lastName}` : 'Unknown User';
                   Alert.alert('Profile', `This would open ${memberName}'s profile.`);
                 }

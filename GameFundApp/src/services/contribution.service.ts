@@ -41,6 +41,24 @@ class ContributionService {
     }
   }
 
+  // Get contributions for a specific user (not just the current user)
+  async getSpecificUserContributions(userId: string): Promise<Contribution[]> {
+    try {
+      const response = await api.get<ApiResponse<Contribution[]>>(`/contributions/user/${userId}`);
+      
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        // Return empty array instead of throwing error
+        console.log(`No contributions found for user ${userId} or error fetching:`, response.message);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Get contributions for user ${userId} error:`, error);
+      return [];
+    }
+  }
+
   // Get contribution by ID
   async getContributionById(id: string): Promise<Contribution> {
     try {

@@ -1,8 +1,7 @@
-namespace GameFundManager.Application.DTOs
+namespace GameFundManager.Application.DTOs;
+
+public class SubmitPollVoteDto
 {
-    public class SubmitPollVoteDto
-    {
-        public Guid PollId { get; set; }
-        public Guid OptionId { get; set; }
-    }
+    public Guid PollId { get; set; }
+    public Guid OptionId { get; set; }
 }

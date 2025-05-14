@@ -1,10 +1,9 @@
-namespace GameFundManager.Application.DTOs
+namespace GameFundManager.Application.DTOs;
+
+public class AddGroupMemberDto
 {
-    public class AddGroupMemberDto
-    {
-        public Guid GroupId { get; set; }
-        public Guid UserId { get; set; }
-        public bool IsAdmin { get; set; }
-        public decimal ContributionQuota { get; set; }
-    }
+    public Guid GroupId { get; set; }
+    public Guid UserId { get; set; }
+    public bool IsAdmin { get; set; }
+    public decimal ContributionQuota { get; set; }
 }

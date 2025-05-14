@@ -194,15 +194,10 @@ const UserDetailsScreen: React.FC = () => {
           profileData.groups = userGroups.map(g => ({ id: g.id, name: g.name }));
           profileData.profileStats.activeGroups = userGroups.length;
           
-          // Try to get contribution stats - using the available API methods
+          // Try to get contribution stats using the specific user endpoint
           try {
-            // This gets all user's contributions without filtering by specific user ID
-            const contributions = await contributionService.getUserContributions();
-            
-            // Filter contributions for the specific user we're viewing (if needed)
-            const userContributions = userId ? 
-              contributions.filter(c => c.userId === userId) : 
-              contributions;
+            // Get contributions specifically for the user we're viewing
+            const userContributions = await contributionService.getSpecificUserContributions(userId);
               
             if (userContributions && userContributions.length > 0) {
               profileData.profileStats.totalContributions = userContributions.reduce(
@@ -226,55 +221,31 @@ const UserDetailsScreen: React.FC = () => {
             console.log('Error fetching user contributions:', err);
           }
             
-          // Try to get expense stats - there's no direct method to get user expenses,
-          // so we'll need to implement a workaround
+          // Try to get expense stats using the direct user expenses endpoint
           try {
-            // The current API doesn't have a direct method to get user expenses,
-            // so for now we'll use a placeholder value or approach the backend team
-            // to add this endpoint
-            profileData.profileStats.expensesPaid = 0;
+            // Get all expenses paid by this specific user
+            const userExpenses = await expenseService.getUserExpenses(userId);
             
-            // In a real implementation, we might:
-            // 1. Fetch expenses from each group the user is in
-            // 2. Filter those where the user is the creator
-            // 3. Sum them up
-            
-            // This is a simplified placeholder implementation
-            const userGroups = profileData.groups;
-            let totalExpensesPaid = 0;
-            
-            // Get expenses from each group and filter by user
-            for (const group of userGroups) {
-              try {
-                const groupExpenses = await expenseService.getGroupExpenses(group.id);
-                // Filter expenses created by this user
-                const userExpenses = groupExpenses.filter(expense => 
-                  expense.createdByUserId === userId || 
-                  expense.createdByUser?.id === userId
-                );
+            if (userExpenses && userExpenses.length > 0) {
+              // Sum up all expenses paid by this user
+              profileData.profileStats.expensesPaid = userExpenses.reduce(
+                (sum, e) => sum + e.amount, 0
+              );
+              
+              // Add recent expenses to activity
+              const recentExpenses = userExpenses
+                .slice(0, 3)
+                .map(e => ({
+                  id: e.id,
+                  action: 'Paid Expense',
+                  group: getGroupNameById(e.groupId, profileData.groups),
+                  amount: e.amount,
+                  date: new Date(e.expenseDate).toLocaleDateString(),
+                  description: e.description
+                }));
                 
-                // Add to total
-                totalExpensesPaid += userExpenses.reduce((sum, e) => sum + e.amount, 0);
-                
-                // Add recent expenses to activity
-                const recentExpenses = userExpenses
-                  .slice(0, 2) // Limit to 2 for now
-                  .map(e => ({
-                    id: e.id,
-                    action: 'Paid Expense',
-                    group: group.name,
-                    amount: e.amount,
-                    date: new Date(e.expenseDate).toLocaleDateString(),
-                    description: e.description
-                  }));
-                  
-                profileData.recentActivity.push(...recentExpenses);
-              } catch (err) {
-                console.log(`Error fetching expenses for group ${group.id}:`, err);
-              }
+              profileData.recentActivity.push(...recentExpenses);
             }
-            
-            profileData.profileStats.expensesPaid = totalExpensesPaid;
           } catch (err) {
             console.log('Error getting expense stats:', err);
           }

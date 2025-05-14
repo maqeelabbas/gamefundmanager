@@ -95,10 +95,18 @@ export const ContributionsTab: React.FC<ContributionsTabProps> = ({
           </StyledView>
         ))
       ) : (
-        <StyledView className="bg-white p-4 rounded-xl shadow-sm items-center">
-          <StyledText className="text-gray-500">
-            No contributions recorded
+        <StyledView className="bg-white p-6 rounded-xl shadow-sm items-center">
+          <StyledText className="text-gray-500 text-center mb-3">
+            No contributions recorded yet. Add a new contribution to get started.
           </StyledText>
+          <StyledTouchableOpacity 
+            className="bg-primary py-2 px-4 rounded-lg mt-2"
+            onPress={() => navigation.navigate('AddContribution', { groupId })}
+          >
+            <StyledText className="text-white font-bold">
+              Add Contribution
+            </StyledText>
+          </StyledTouchableOpacity>
         </StyledView>
       )}
     </StyledView>

@@ -57,6 +57,27 @@ class ExpenseService {  // Get group expenses
       throw error;
     }
   }
+
+  // Get all expenses paid by a specific user
+  async getUserExpenses(userId: string): Promise<Expense[]> {
+    try {
+      console.log(`Expense service: Fetching expenses paid by user ${userId}`);
+      const response = await api.get<ApiResponse<Expense[]>>(`/expenses/user/${userId}`);
+      
+      if (response.success && response.data) {
+        console.log(`Expense service: Found ${response.data.length} expenses paid by user ${userId}`);
+        return response.data;
+      } else {
+        // Return empty array instead of throwing error
+        console.log(`Expense service: No expenses found for user ${userId} or error fetching:`, response.message);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Expense service: Get expenses for user ${userId} error:`, error);
+      return [];
+    }
+  }
+
   // Create a new expense
   async createExpense(expenseData: CreateExpenseRequest): Promise<Expense> {
     try {
