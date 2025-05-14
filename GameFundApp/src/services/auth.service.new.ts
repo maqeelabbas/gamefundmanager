@@ -36,7 +36,7 @@ class AuthService {
             id: response.data.userId,
             name: `${response.data.firstName} ${response.data.lastName}`,
             email: response.data.email,
-            role: 'player', // Default role
+            role: 'member', // Default role - updated from 'player'
           },
           token: response.data.token
         };
@@ -79,7 +79,7 @@ class AuthService {
             id: response.data.userId,
             name: `${response.data.firstName} ${response.data.lastName}`,
             email: response.data.email,
-            role: 'player', // Default role
+            role: 'member', // Default role - updated from 'player'
           },
           token: response.data.token
         };

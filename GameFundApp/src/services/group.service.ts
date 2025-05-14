@@ -209,7 +209,6 @@ class GroupService {
       throw error;
     }
   }
-
   // Remove a member from the group
   async removeMember(groupId: string, memberId: string): Promise<boolean> {
     try {
@@ -222,9 +221,11 @@ class GroupService {
       } else {
         throw new Error(response.message || 'Failed to remove member from group');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Remove member error:`, error);
-      throw error;
+      // Format the error message for better user experience
+      const errorMessage = error.message || 'Failed to remove member from group';
+      throw new Error(errorMessage);
     }
   }
 }

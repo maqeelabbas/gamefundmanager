@@ -366,16 +366,28 @@ const GroupDetailsScreen: React.FC = () => {
       "Are you sure you want to leave this group? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: async () => {
+        {          text: "Leave",
+          style: "destructive",          onPress: async () => {
             try {
               await leaveGroupAPI();
               Alert.alert("Success", "You have left the group");
-              navigation.goBack();
+              // Navigate back to the main tab with the Groups screen
+              navigation.navigate("Main", { screen: "Groups", params: { refresh: true } });
             } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to leave group");
+              // Format the error message to be more user-friendly
+              let errorMessage = "Failed to leave group";
+              
+              if (error.message) {
+                // Clean up any JSON or technical details from the error message
+                const cleanMessage = error.message
+                  .replace(/[{}[\]"]/g, '') // Remove JSON syntax
+                  .replace(/^\s*error:\s*/i, '') // Remove "Error:" prefix
+                  .trim();
+                
+                errorMessage = cleanMessage;
+              }
+              
+              Alert.alert("Error", errorMessage);
             }
           }
         }

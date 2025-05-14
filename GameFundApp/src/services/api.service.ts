@@ -206,9 +206,10 @@ const apiCall = async <T>(
       clearTimeout(timeoutId); // Clear timeout on success
       
       console.log('✅ Fetch completed with status:', response.status);
-      console.log('📄 Response headers:', JSON.stringify(Object.fromEntries([...response.headers.entries()]), null, 2));      // Handle error responses
+      console.log('📄 Response headers:', JSON.stringify(Object.fromEntries([...response.headers.entries()]), null, 2));        // Handle error responses
       if (!response.ok) {
         let errorText = '';
+        let errorMessage = '';
         try {
           errorText = await response.text();
           console.error(`❌ API Error (${response.status}):`, errorText || 'No error text');
@@ -218,8 +219,17 @@ const apiCall = async <T>(
             try {
               const errorJson = JSON.parse(errorText);
               console.error('📄 Error details:', JSON.stringify(errorJson, null, 2));
+              
+              // Extract a user-friendly message from the error JSON
+              if (errorJson.message) {
+                errorMessage = errorJson.message;
+              } else if (errorJson.errors && typeof errorJson.errors === 'object') {
+                // Handle validation errors
+                errorMessage = Object.values(errorJson.errors).flat().join('. ');
+              }
             } catch (e) {
               // Not JSON, just leave as text
+              errorMessage = errorText;
             }
           }
         } catch (e) {
@@ -277,14 +287,14 @@ const apiCall = async <T>(
           } else {
             console.warn('🔄 Not attempting token refresh on retry request to prevent loops');
           }
-          
-          // If we get here, token refresh failed or wasn't possible
+              // If we get here, token refresh failed or wasn't possible
           // Clear the token as it's likely invalid
           console.log('🔑 Clearing token after failed auth/refresh');
           setAuthToken(null);
         }
         
-        throw new Error(errorText || `API call failed with status: ${response.status}`);
+        // Throw with a user-friendly message
+        throw new Error(errorMessage || errorText || `API call failed with status: ${response.status}`);
       }
 
       // Parse the response as JSON

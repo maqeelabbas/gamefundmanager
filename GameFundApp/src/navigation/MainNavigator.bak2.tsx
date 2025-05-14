@@ -20,20 +20,19 @@ const MainNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { paddingBottom: 2 },
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <View>
               <Ionicons name="home-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: ({color}) => (
-            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Home</Text>
+          tabBarLabel: () => (
+            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Home</Text>
           ),
         }}
       />
@@ -41,13 +40,13 @@ const MainNavigator = () => {
         name="Groups"
         component={GroupsScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <View>
               <Ionicons name="people-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: ({color}) => (
-            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Groups</Text>
+          tabBarLabel: () => (
+            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Groups</Text>
           ),
         }}
       />
@@ -55,13 +54,13 @@ const MainNavigator = () => {
         name="Finances"
         component={FinancesScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <View>
               <Ionicons name="wallet-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: ({color}) => (
-            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Finances</Text>
+          tabBarLabel: () => (
+            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Finances</Text>
           ),
         }}
       />
@@ -69,13 +68,13 @@ const MainNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <View>
               <Ionicons name="person-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: ({color}) => (
-            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Profile</Text>
+          tabBarLabel: () => (
+            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Profile</Text>
           ),
         }}
       />

@@ -11,7 +11,7 @@ export type AuthStackParamList = {
 // Main Tab Navigator Types
 export type MainTabParamList = {
   Home: undefined;
-  Groups: undefined;
+  Groups: { refresh?: boolean };
   Finances: undefined;
   Profile: undefined;
 };

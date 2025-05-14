@@ -217,8 +217,8 @@ public class GroupService : IGroupService
         result.User = _mapper.Map<UserDto>(user);
         
         return ApiResponse<GroupMemberDto>.SuccessResponse(result, "Member added to group successfully");
-    }
-
+    }    
+    
     public async Task<ApiResponse<bool>> RemoveMemberFromGroupAsync(Guid groupId, Guid memberId, Guid currentUserId)
     {
         var group = await _groupRepository.GetGroupWithMembersAsync(groupId);
@@ -226,13 +226,16 @@ public class GroupService : IGroupService
         if (group == null)
             return ApiResponse<bool>.FailureResponse("Group not found");
             
-        // Check if the current user is owner or admin
-        if (group.OwnerId != currentUserId)
+        // Allow users to remove themselves from a group
+        bool isSelfRemoval = currentUserId == memberId;
+        
+        // Check if the current user is owner, admin, or removing themselves
+        if (!isSelfRemoval && group.OwnerId != currentUserId)
         {
             var isAdmin = group.Members.Any(m => m.UserId == currentUserId && m.IsAdmin);
             
             if (!isAdmin)
-                return ApiResponse<bool>.FailureResponse("You don't have permission to remove members from this group");
+                return ApiResponse<bool>.FailureResponse("You don't have permission to remove other members from this group");
         }
         
         // Can't remove the owner

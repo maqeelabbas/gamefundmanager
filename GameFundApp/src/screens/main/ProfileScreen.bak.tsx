@@ -153,9 +153,7 @@ const ProfileScreen = () => {
         <StyledText className="text-white text-sm opacity-80 mt-1">
           Manage your account
         </StyledText>
-      </StyledView>
-
-      <StyledScrollView className="flex-1 px-4 pt-4">
+      </StyledView>      <StyledScrollView className="flex-1 px-4 pt-4">
         {/* User Info Card */}
         <StyledView className="bg-white rounded-lg p-5 shadow-sm mb-6">
           <StyledView className="items-center mb-4">
@@ -165,7 +163,7 @@ const ProfileScreen = () => {
               </View>
             </StyledView>
             {isEditing ? (
-              <View>
+              <>
                 <StyledView className="w-full mb-4">
                   <StyledText className="text-gray-600 mb-1">Name *</StyledText>
                   <StyledTextInput
@@ -224,9 +222,8 @@ const ProfileScreen = () => {
                 <StyledText className="text-gray-500 text-xs mb-4">
                   * Required fields
                 </StyledText>
-              </View>
-            ) : (
-              <View>
+              </>            ) : (
+              <>
                 <StyledText className="text-xl font-bold">
                   {user?.name || "User"}
                 </StyledText>
@@ -248,7 +245,7 @@ const ProfileScreen = () => {
                     {user?.role ? user.role.toUpperCase() : "MEMBER"}
                   </StyledText>
                 </StyledView>
-              </View>
+              </>
             )}
           </StyledView>
 
@@ -278,8 +275,7 @@ const ProfileScreen = () => {
                 Cancel
               </StyledText>
             </StyledTouchableOpacity>
-          )}
-          {updateError && (
+          )}          {updateError && (
             <StyledText className="text-red-500 text-center mt-2">
               {updateError instanceof Error
                 ? updateError.message
@@ -298,8 +294,7 @@ const ProfileScreen = () => {
               <Ionicons name="person-outline" size={22} color="#0284c7" />
             </View>
             <StyledText className="ml-3 text-gray-800">Edit Profile</StyledText>
-            <StyledView style={{ marginLeft: "auto" }}>
-              <View>
+            <StyledView style={{ marginLeft: "auto" }}>              <View>
                 <Ionicons name="chevron-forward" size={18} color="#999" />
               </View>
             </StyledView>
@@ -314,8 +309,7 @@ const ProfileScreen = () => {
             </StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
               <View>
-                <Ionicons name="chevron-forward" size={18} color="#999" />
-              </View>
+                <Ionicons name="chevron-forward" size={18} color="#999" />              </View>
             </StyledView>
           </StyledTouchableOpacity>
           
@@ -328,8 +322,7 @@ const ProfileScreen = () => {
             </StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
               <View>
-                <Ionicons name="chevron-forward" size={18} color="#999" />
-              </View>
+                <Ionicons name="chevron-forward" size={18} color="#999" />              </View>
             </StyledView>
           </StyledTouchableOpacity>
           

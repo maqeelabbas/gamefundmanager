@@ -79,7 +79,7 @@ class UserService {
           name: `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim(),
           email: response.data.email,
           phoneNumber: response.data.phoneNumber || '',
-          role: 'player' // Default role
+          role: 'member' // Default role
         };
         
         console.log('Successfully updated user:', result);

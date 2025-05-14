@@ -330,7 +330,7 @@ const UserDetailsScreen: React.FC = () => {
     email: profile.user.email,
     phone: profile.user.phoneNumber || 'Not provided',
     joinedDate: 'Member',
-    role: 'Player',
+    role: 'Member', // Changed from 'Player' to 'Member'
     groups: profile.groups.map(g => g.name),
     profileStats: profile.profileStats,
     recentActivity: profile.recentActivity
@@ -408,8 +408,7 @@ const UserDetailsScreen: React.FC = () => {
             <StyledText className="text-xl font-bold text-text">{user.name}</StyledText>
             <StyledText className="text-sm text-gray-500 mb-2">{user.role}</StyledText>
           </StyledView>
-          
-          {/* User Stats */}
+            {/* User Stats */}
           <StyledView className="flex-row justify-between p-4 bg-white border-b border-gray-100">
             <StyledView className="items-center">
               <StyledText className="text-primary font-bold text-lg">${user.profileStats.totalContributions}</StyledText>
@@ -417,7 +416,7 @@ const UserDetailsScreen: React.FC = () => {
             </StyledView>
             
             <StyledView className="items-center">
-              <StyledText className="text-secondary font-bold text-lg">${user.profileStats.expensesPaid}</StyledText>
+              <StyledText className="text-red-500 font-bold text-lg">${user.profileStats.expensesPaid}</StyledText>
               <StyledText className="text-text text-xs">Expenses Paid</StyledText>
             </StyledView>
             
@@ -483,12 +482,13 @@ const UserDetailsScreen: React.FC = () => {
             <StyledText className="text-lg font-bold text-text mb-3">Recent Activity</StyledText>
             
             {user.recentActivity.length > 0 ? (
-              user.recentActivity.map(activity => (
-                <StyledView key={activity.id} className="mb-3 pb-3 border-b border-gray-100">
+              user.recentActivity.map(activity => (                <StyledView key={activity.id} className="mb-3 pb-3 border-b border-gray-100">
                   <StyledView className="flex-row justify-between">
                     <StyledText className="text-text font-medium">{activity.action}</StyledText>
                     {activity.amount && (
-                      <StyledText className="font-bold text-primary">${activity.amount}</StyledText>
+                      <StyledText className={`font-bold ${activity.action.includes('Expense') || activity.action === 'Paid Expense' ? 'text-red-500' : 'text-primary'}`}>
+                        ${activity.amount}
+                      </StyledText>
                     )}
                   </StyledView>
                   
