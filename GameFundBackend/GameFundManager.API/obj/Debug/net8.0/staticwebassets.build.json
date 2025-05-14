@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "QIPoPEmOopL6ZvnP6lcCmC3mucraN8AYPLtbCv7eh04=",
+  "Source": "GameFundManager.API",
+  "BasePath": "_content/GameFundManager.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
