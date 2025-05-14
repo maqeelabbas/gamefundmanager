@@ -1,0 +1,137 @@
+# GameFund Manager - Mobile App Requirements (React Native)
+
+## Objective
+
+A cross-platform mobile app (iOS + Android) to manage sports group contributions, expenses, polls, and communication for games like Badminton and Cricket.
+
+## Technology Stack
+
+* React Native
+* UI: TailwindCSS (NativeWind), shadcn/ui
+* State Management: Redux Toolkit or Zustand
+* Backend: Firebase Firestore (or Supabase)
+* Authentication: Firebase Auth
+* Storage: Firebase Storage
+* Notifications: Firebase Cloud Messaging (FCM)
+
+## Core Modules & Features
+
+### 1. User Management
+
+* Roles: Member, Group Admin, Admin
+* Features:
+
+  * Registration/Login (Email/Phone, Google/Apple optional)
+  * Profile management (name, photo, contact, games joined)
+  * Admin panel for managing users
+
+### 2. Group Management
+
+* Create/manage groups (Badminton, Cricket)
+* Players can join multiple groups to become members of different teams.
+* Features:
+
+  * Group creation (name, type, description)
+  * Group member management (invite, remove)
+  * Group admin management (assign/remove)
+  * Group settings (privacy, notifications)
+  * Group type (Public/Private)
+  
+* Each group has:
+
+  * Members list
+  * Contributions
+  * Expenses
+  * Polls
+  * Chat & Media
+
+### 3. Contribution Tracking
+
+* Monthly contributions per Member per group
+* Features:
+
+  * Mark contributions (Paid/Pending/Adjusted)
+  * Member view of status
+  * Contribution reminders (push notifications)
+
+### 4. Expense Tracking
+
+* Log expenses (equipment, ground fees)
+* Features:
+
+  * Item name, amount, purchased by, date, notes
+  * Auto-adjust contributions when a member purchases
+  * Transparent ledger per group
+
+### 5. Reporting & Summary
+
+* Features:
+
+  * Group financial summary (collected/spent/balance)
+  * Member-wise ledger
+  * (Optional) Report export (PDF/Excel)
+
+### 6. Polls
+
+* For game availability or decisions
+* Features:
+
+  * Create polls (Yes/No, multiple choice)
+  * Vote & view summary
+
+### 7. Group Chat & Media
+
+* Text chat per group
+* Features:
+
+  * Media sharing (photos/videos)
+  * Emoji reactions (optional)
+  * Chat moderation (Admins)
+
+### 8. Notifications
+
+* Push notifications for:
+
+  * Contribution reminders
+  * Polls
+  * Expenses added
+  * Chat mentions (optional)
+
+## Feature Roadmap
+
+### MVP
+
+* User Management
+* Group Management
+* Contribution Tracking
+* Expense Tracking
+* Financial Summary
+* Push Notifications (basic)
+* Admin Panel (basic)
+* Sporty UI
+
+### Future Features
+
+* Polls
+* Group Chat & Media
+* Report Export
+* Chat Reactions & Media Gallery
+* Attendance Tracker
+* In-app Announcements
+* Game Stats Tracker (optional)
+
+## UI Design Guidelines
+
+* Theme: Sporty (greens, blues, whites, orange accents)
+* Style: Rounded cards, bold fonts, intuitive tabs
+* Key Screens:
+
+  * Login/Register
+  * Home Dashboard (Group Selector)
+  * Group Details (Tabs: Contributions/Expenses/Polls/Chat)
+  * Contribution Tracker
+  * Expense Log
+  * Polls
+  * Group Chat
+  * Admin Panel
+  * Profile/Settings
