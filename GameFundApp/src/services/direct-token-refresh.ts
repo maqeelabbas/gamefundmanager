@@ -5,19 +5,26 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
   try {
     // Make a direct fetch request to refresh the token without using api service
     const url = `${API_CONFIG.BASE_URL}/auth/refresh-token`;
-    console.log(`🔄 Making direct refresh request to ${url}`);
+    console.log(`🔄 Making direct refresh request to ${url}`);    // Make sure we have a valid token format
+    if (!token || token.trim() === '' || !token.includes('.') || token.split('.').length !== 3) {
+      console.error('🔄 Invalid token format for refresh:', token ? `${token.substring(0, 15)}...` : 'null');
+      return { success: false };
+    }
 
-    // Prepare headers
+    // Prepare headers - ensure token is properly formatted
+    const cleanToken = token.startsWith('Bearer ') ? token.substring(7).trim() : token;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${cleanToken}`
     };
 
-    // Prepare request options
+    // Prepare request options - don't send token in both headers and body to avoid confusion
     const options: RequestInit = {
       method: 'POST',
       headers,
-      body: JSON.stringify({ token }),
+      // Only include token in Authorization header, not in body
+      body: JSON.stringify({}),
       mode: 'cors',
       cache: 'no-cache',
       credentials: 'include'
@@ -34,7 +41,16 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
     // Make the request
     console.log('🌐 Fetching:', processedUrl);
     const response = await fetch(processedUrl, options);
-    console.log('✅ Refresh request completed with status:', response.status);    // Parse response
+    console.log('✅ Refresh request completed with status:', response.status);
+    console.log('📄 Response headers:', JSON.stringify(Object.fromEntries([...response.headers.entries()]), null, 2));
+    
+    // If status is 401, the token is definitely invalid
+    if (response.status === 401) {
+      console.error('❌ Token refresh failed with 401 Unauthorized - token is invalid');
+      return { success: false };
+    }
+    
+    // Parse response
     const text = await response.text();
     console.log('🔄 Refresh response text:', text.length > 100 ? `${text.substring(0, 100)}...` : text);
     

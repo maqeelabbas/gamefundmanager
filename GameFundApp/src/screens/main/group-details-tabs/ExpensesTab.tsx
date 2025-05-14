@@ -77,7 +77,7 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
           >
             <StyledView className="flex-row justify-between">
               <StyledText className="font-bold text-gray-800">
-                {expense.title}
+                {expense.title} {expense.statusName}
               </StyledText>
               <StyledText className="font-bold text-red-500">
                 {currency} {expense.amount.toFixed(2)}

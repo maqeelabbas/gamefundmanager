@@ -6,12 +6,11 @@ export const API_CONFIG = {
   // For iOS simulator, use 'localhost'
   // For Android emulator, use '10.0.2.2'
   // For physical devices, use the computer's local network IP
-  
   // IMPORTANT: Using HTTP instead of HTTPS to avoid certificate validation issues in development
   BASE_URL: Platform.select({
-    ios: 'https://5b5b-2001-a62-4d8-d101-6d4c-9af4-b01a-fca8.ngrok-free.app/api', // Use localhost for iOS simulator
-    android: 'https://5b5b-2001-a62-4d8-d101-6d4c-9af4-b01a-fca8.ngrok-free.app/api', // Special IP for Android emulator
-    default: 'https://5b5b-2001-a62-4d8-d101-6d4c-9af4-b01a-fca8.ngrok-free.app/api', // Fallback to local network IP
+    ios: 'https://8981-2001-a62-4d8-d101-f463-1656-fa09-3626.ngrok-free.app/api', // Use localhost for iOS simulator
+    android: 'https://8981-2001-a62-4d8-d101-f463-1656-fa09-3626.ngrok-free.app/api', // Special IP for Android emulator
+    default: 'https://8981-2001-a62-4d8-d101-f463-1656-fa09-3626.ngrok-free.app/api', // Fallback to local network IP
   }),
   
   // Alternative configurations (uncomment and modify as needed):

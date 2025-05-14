@@ -7,7 +7,7 @@ const API_BASE_URL = API_CONFIG.BASE_URL;
 
 // Store the auth token
 let authToken: string | null = null;
-let tokenInitialized = false;
+export let tokenInitialized = false;
 
 // Initialize token from AsyncStorage
 export const initializeAuthToken = async (): Promise<void> => {
@@ -15,8 +15,14 @@ export const initializeAuthToken = async (): Promise<void> => {
     console.log('🔑 Initializing auth token from storage');
     const storedToken = await AsyncStorage.getItem('@GameFund:token');
     if (storedToken) {
-      console.log(`🔑 Found stored token: ${storedToken.substring(0, 15)}...`);
-      authToken = storedToken;
+      // Validate token format
+      if (storedToken.split('.').length !== 3) {
+        console.error('🔑 Invalid token format detected during initialization');
+        authToken = null;
+      } else {
+        console.log(`🔑 Found stored token: ${storedToken.substring(0, 15)}...`);
+        authToken = storedToken;
+      }
     } else {
       console.log('🔑 No stored token found');
       authToken = null;
@@ -53,13 +59,30 @@ export const getAuthToken = () => {
     console.warn('🔑 Warning: Token accessed before initialization, attempting immediate load');
     // Try to get it synchronously if possible
     try {
-      initializeAuthToken();
+      // Initialize token immediately (this won't actually be synchronous but will start the process)
+      initializeAuthToken().catch(e => console.error('Async token initialization failed:', e));
+      
+      // Check if token is already loaded from AsyncStorage synchronously
+      // This is a fallback mechanism for when the token is accessed before initialization
+      AsyncStorage.getItem('@GameFund:token')
+        .then(token => {
+          if (token && !authToken) {
+            console.log('🔑 Retrieved token from AsyncStorage synchronously');
+            authToken = token;
+            tokenInitialized = true;
+          }
+        })
+        .catch(e => console.error('Failed to get token from AsyncStorage:', e));
     } catch (e) {
       console.error('Failed to initialize token:', e);
     }
   }
   
-  console.log(`🔑 Current auth token: ${authToken ? `${authToken.substring(0, 15)}... (${authToken.length} chars)` : 'null'}`);
+  if (authToken) {
+    console.log(`🔑 Current auth token: ${authToken.substring(0, 15)}... (${authToken.length} chars)`);
+  } else {
+    console.log('🔑 Current token state: null');
+  }
   return authToken;
 };
 
@@ -67,10 +90,32 @@ export const getAuthToken = () => {
 const getHeaders = () => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   };
-
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+  const token = authToken;
+  if (token) {
+    try {
+      // First make sure token is not undefined, null, or empty
+      if (!token || token.trim() === '') {
+        console.log('🔑 Empty token found in getHeaders, skipping Authorization header');
+        return headers;
+      }
+      
+      // Basic JWT format validation 
+      if (!token.includes('.') || token.split('.').length !== 3) {
+        console.error('🔑 Invalid token format detected in getHeaders, skipping Authorization header');
+        return headers;
+      }
+      
+      // Make sure token is formatted correctly with 'Bearer' prefix
+      const cleanToken = token.startsWith('Bearer ') ? token.substring(7).trim() : token;
+      headers['Authorization'] = `Bearer ${cleanToken}`;
+      console.log('🔑 Adding Authorization header:', `Bearer ${cleanToken.substring(0, 15)}...`);
+    } catch (e) {
+      console.error('🔑 Error setting Authorization header:', e);
+    }
+  } else {
+    console.log('🔑 No auth token available for request headers');
   }
 
   return headers;

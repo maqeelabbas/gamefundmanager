@@ -21,6 +21,7 @@ const MainNavigator = () => {
       screenOptions={{
         headerShown: false,
         tabBarStyle: { paddingBottom: 2 },
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tab.Screen
@@ -28,7 +29,7 @@ const MainNavigator = () => {
         component={HomeScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="home-outline" size={size} color={color} />
             </View>
           ),
@@ -42,7 +43,7 @@ const MainNavigator = () => {
         component={GroupsScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="people-outline" size={size} color={color} />
             </View>
           ),
@@ -56,7 +57,7 @@ const MainNavigator = () => {
         component={FinancesScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="wallet-outline" size={size} color={color} />
             </View>
           ),
@@ -70,7 +71,7 @@ const MainNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="person-outline" size={size} color={color} />
             </View>
           ),

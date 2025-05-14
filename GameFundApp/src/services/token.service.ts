@@ -2,7 +2,7 @@
 import { API_CONFIG, ApiResponse } from '../config/api.config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { getAuthToken, setAuthToken } from './http.service';
+import { getAuthToken, setAuthToken, initializeAuthToken, tokenInitialized } from './http.service';
 
 // Keys for AsyncStorage
 const TOKEN_KEY = '@GameFund:token';
@@ -23,6 +23,12 @@ class TokenService {
       if (!currentToken) {
         console.log('🔑 No current token available to check expiry');
         return true; // No token means it's effectively expired
+      }
+
+      // Validate token format - basic sanity check
+      if (!currentToken.match(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)) {
+        console.error('🔑 Invalid token format detected, treating as expired');
+        return true;
       }
 
       const tokenExpiryStr = await AsyncStorage.getItem(TOKEN_EXPIRY_KEY);
@@ -164,11 +170,10 @@ class TokenService {
               }
             }
           }, 500);
-          
-          // Safety timeout after 5 seconds to prevent deadlock
-          setTimeout(() => {
+            // Safety timeout after 5 seconds to prevent deadlock
+          setTimeout(async () => {
             clearInterval(checkInterval);
-            clearRefreshInProgress();
+            await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
             console.log('🔄 Timed out waiting for other refresh, proceeding with current token');
             
             // Get current token state after timeout
@@ -336,8 +341,7 @@ class TokenService {
       // Make sure to clear the in-progress flag even if an error occurs
       await AsyncStorage.setItem('@GameFund:tokenRefreshInProgress', 'false');
         return false;
-    }
-  }
+    }  }
   
   // Validate and refresh token if needed before making API calls
   async ensureValidToken(): Promise<boolean> {
@@ -345,6 +349,12 @@ class TokenService {
     let lockReleased = false;
     
     try {
+      // First make sure token is initialized
+      if (!tokenInitialized) {
+        console.log('🔑 Token not initialized, initializing now');
+        await initializeAuthToken();
+      }
+      
       const currentToken = getAuthToken();
       
       // If no token, nothing to refresh

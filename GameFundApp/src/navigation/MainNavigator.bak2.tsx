@@ -17,64 +17,61 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainNavigator = () => {
   return (
-    <Tab.Navigator
-      screenOptions={{
+    <Tab.Navigator      screenOptions={{
         headerShown: false,
+        tabBarStyle: { paddingBottom: 2 },
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <View>
+        options={{          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="home-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: () => (
-            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Home</Text>
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Home</Text>
           ),
         }}
       />
       <Tab.Screen
         name="Groups"
         component={GroupsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <View>
+        options={{          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="people-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: () => (
-            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Groups</Text>
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Groups</Text>
           ),
         }}
       />
       <Tab.Screen
         name="Finances"
         component={FinancesScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <View>
+        options={{          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="wallet-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: () => (
-            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Finances</Text>
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Finances</Text>
           ),
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <View>
+        options={{          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="person-outline" size={size} color={color} />
             </View>
           ),
-          tabBarLabel: () => (
-            <Text style={{ fontSize: 10, color: "#2b7a0b" }}>Profile</Text>
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Profile</Text>
           ),
         }}
       />

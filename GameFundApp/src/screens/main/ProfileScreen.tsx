@@ -144,7 +144,6 @@ const ProfileScreen = () => {
   return (
     <StyledView className="flex-1 bg-background">
       <StatusBar style="dark" />
-
       {/* Profile Header */}
       <StyledView className="bg-primary p-6 pt-12">
         <StyledText className="text-white text-xl font-bold">
@@ -157,21 +156,22 @@ const ProfileScreen = () => {
 
       <StyledScrollView className="flex-1 px-4 pt-4">
         {/* User Info Card */}
-        <StyledView className="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <StyledView className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <StyledView className="items-center mb-4">
             <StyledView className="w-20 h-20 rounded-full bg-gray-200 items-center justify-center mb-3">
-              <View>
+              <View style={{alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="person" size={40} color="#666" />
               </View>
             </StyledView>
+            
             {isEditing ? (
-              <View>
+              <View style={{width: '100%'}}>
                 <StyledView className="w-full mb-4">
-                  <StyledText className="text-gray-600 mb-1">Name *</StyledText>
+                  <StyledText className="text-sm font-medium text-text mb-2">Name *</StyledText>
                   <StyledTextInput
                     className={`border ${
                       errors.name ? "border-red-500" : "border-gray-300"
-                    } rounded-md p-2 w-full`}
+                    } rounded-lg p-3 w-full text-text`}
                     value={formData.name}
                     onChangeText={(text) => handleChange("name", text)}
                     placeholder="Enter your full name"
@@ -184,13 +184,13 @@ const ProfileScreen = () => {
                 </StyledView>
 
                 <StyledView className="w-full mb-4">
-                  <StyledText className="text-gray-600 mb-1">
+                  <StyledText className="text-sm font-medium text-text mb-2">
                     Email * (readonly)
                   </StyledText>
                   <StyledTextInput
                     className={`border ${
                       errors.email ? "border-red-500" : "border-gray-300"
-                    } rounded-md p-2 w-full bg-gray-100`}
+                    } rounded-lg p-3 w-full bg-gray-100 text-text`}
                     value={formData.email}
                     editable={false}
                   />
@@ -202,13 +202,13 @@ const ProfileScreen = () => {
                 </StyledView>
 
                 <StyledView className="w-full mb-4">
-                  <StyledText className="text-gray-600 mb-1">
+                  <StyledText className="text-sm font-medium text-text mb-2">
                     Phone Number
                   </StyledText>
                   <StyledTextInput
                     className={`border ${
                       errors.phoneNumber ? "border-red-500" : "border-gray-300"
-                    } rounded-md p-2 w-full`}
+                    } rounded-lg p-3 w-full text-text`}
                     value={formData.phoneNumber}
                     onChangeText={(text) => handleChange("phoneNumber", text)}
                     keyboardType="phone-pad"
@@ -220,13 +220,13 @@ const ProfileScreen = () => {
                     </StyledText>
                   )}
                 </StyledView>
-
-                <StyledText className="text-gray-500 text-xs mb-4">
+                
+                <StyledText className="text-gray-500 text-xs mt-2 mb-4">
                   * Required fields
                 </StyledText>
               </View>
             ) : (
-              <View>
+              <View style={{width: '100%', alignItems: 'center'}}>
                 <StyledText className="text-xl font-bold">
                   {user?.name || "User"}
                 </StyledText>
@@ -235,7 +235,7 @@ const ProfileScreen = () => {
                 </StyledText>
                 {user?.phoneNumber && (
                   <StyledView className="flex-row items-center mt-1">
-                    <View>
+                    <View style={{alignItems: 'center', justifyContent: 'center'}}>
                       <Ionicons name="call-outline" size={14} color="#666" />
                     </View>
                     <StyledText className="text-gray-500 ml-1">
@@ -251,12 +251,12 @@ const ProfileScreen = () => {
               </View>
             )}
           </StyledView>
-
+          
           {/* Edit/Save Profile Button */}
           <StyledTouchableOpacity
-            className={`mt-2 p-3 rounded-md ${
-              isEditing ? "bg-green-600" : "bg-blue-500"
-            }`}
+            className={`mt-4 p-4 rounded-lg ${
+              isEditing ? "bg-green-600" : "bg-primary"
+            } items-center`}
             onPress={isEditing ? handleSaveProfile : handleEditToggle}
             disabled={updateLoading}
           >
@@ -271,7 +271,7 @@ const ProfileScreen = () => {
 
           {isEditing && (
             <StyledTouchableOpacity
-              className="mt-2 p-3 rounded-md bg-gray-400"
+              className="mt-3 p-4 rounded-lg bg-gray-400 items-center"
               onPress={handleEditToggle}
             >
               <StyledText className="text-white text-center font-bold">
@@ -279,6 +279,7 @@ const ProfileScreen = () => {
               </StyledText>
             </StyledTouchableOpacity>
           )}
+          
           {updateError && (
             <StyledText className="text-red-500 text-center mt-2">
               {updateError instanceof Error
@@ -287,59 +288,59 @@ const ProfileScreen = () => {
             </StyledText>
           )}
         </StyledView>
-          
+        
         {/* Settings Section */}
         <StyledView className="bg-white rounded-lg shadow-sm mb-6">
           <StyledTouchableOpacity
             className="flex-row items-center p-4 border-b border-gray-100"
             onPress={handleEditToggle}
           >
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="person-outline" size={22} color="#0284c7" />
             </View>
             <StyledText className="ml-3 text-gray-800">Edit Profile</StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
-              <View>
+              <View style={{alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="chevron-forward" size={18} color="#999" />
               </View>
             </StyledView>
           </StyledTouchableOpacity>
           
           <StyledTouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="notifications-outline" size={22} color="#0284c7" />
             </View>
             <StyledText className="ml-3 text-gray-800">
               Notifications
             </StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
-              <View>
+              <View style={{alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="chevron-forward" size={18} color="#999" />
               </View>
             </StyledView>
           </StyledTouchableOpacity>
           
           <StyledTouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="lock-closed-outline" size={22} color="#0284c7" />
             </View>
             <StyledText className="ml-3 text-gray-800">
               Change Password
             </StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
-              <View>
+              <View style={{alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="chevron-forward" size={18} color="#999" />
               </View>
             </StyledView>
           </StyledTouchableOpacity>
           
           <StyledTouchableOpacity className="flex-row items-center p-4">
-            <View>
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Ionicons name="settings-outline" size={22} color="#0284c7" />
             </View>
             <StyledText className="ml-3 text-gray-800">App Settings</StyledText>
             <StyledView style={{ marginLeft: "auto" }}>
-              <View>
+              <View style={{alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="chevron-forward" size={18} color="#999" />
               </View>
             </StyledView>

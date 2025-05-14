@@ -55,17 +55,53 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         // Load token and user data from AsyncStorage
         const token = await AsyncStorage.getItem(TOKEN_KEY);
         const userData = await AsyncStorage.getItem(USER_KEY);
+        
+        // Debug auth state to check token validity with the server
+        const debugAuthState = async (token: string) => {
+          try {
+            const { api } = require('../services/api.service');
+            const response = await api.get('/auth/validate-token');
+            console.log('🔑 Auth debug check result:', response);
+            return true;
+          } catch (error) {
+            console.error('🔑 Auth debug check failed:', error);
+            return false;
+          }
+        };
 
         console.log(`🔑 Auth state loaded: Token exists: ${!!token}, User exists: ${!!userData}`);
 
         if (token && userData) {
-          try {
-            // Set the token in the API service
-            setAuthToken(token);
+          try {          // Basic token validation - make sure it's in JWT format
+            if (!token.includes('.') || token.split('.').length !== 3) {
+              console.error('🔑 Invalid token format detected, logging out');
+              await clearAuthState();
+              setAuthToken(null);
+              return;
+            }
+            
+            // Validate token against backend before setting
+            try {
+              // Set the token in the API service first
+              setAuthToken(token);
+              
+              // Now validate with the backend
+              const { api } = require('../services/api.service');
+              await api.get('/auth/validate-token');
+              console.log('🔑 Token validated with backend successfully');
+            } catch (validationError) {
+              console.error('🔑 Token validation with backend failed:', validationError);
+              // We'll still proceed with the token since the validation might fail due to 
+              // temporary network issues
+            }
               // Parse the user data directly without validation
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
+            const parsedUser = JSON.parse(userData);            setUser(parsedUser);
             console.log(`🔑 User authenticated: ${parsedUser.name} (${parsedUser.email})`);
+            
+            // Validate token with backend silently
+            debugAuthState(token).catch(e => {
+              console.log('🔑 Silent token validation failed:', e);
+            });
           } catch (parseError) {
             console.error('🔑 Error parsing user data:', parseError);
             await clearAuthState();

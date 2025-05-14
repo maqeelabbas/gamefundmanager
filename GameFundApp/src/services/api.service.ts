@@ -127,8 +127,7 @@ const apiCall = async <T>(
       if (apiCallCounters.total > MAX_API_CALLS.total) {
         throw new Error(`API call limit exceeded. Too many ${endpointType} requests (${apiCallCounters[endpointType as keyof typeof apiCallCounters]}/${MAX_API_CALLS[endpointType as keyof typeof MAX_API_CALLS]}).`);
       }
-    }
-      // Skip token validation for auth endpoints
+    }      // Skip token validation for auth endpoints
     const isAuthEndpoint = endpoint.includes('/auth/login') || 
                            endpoint.includes('/auth/register') ||
                            endpoint.includes('/auth/healthcheck') ||
@@ -144,6 +143,19 @@ const apiCall = async <T>(
         const storedToken = await AsyncStorage.getItem('@GameFund:token');
         if (storedToken) {
           console.log('🔑 Found stored token, setting it before request');
+          
+          // Basic token validation check
+          if (!storedToken.includes('.') || storedToken.split('.').length !== 3) {
+            console.warn('🔑 Stored token appears invalid (not in JWT format), clearing it');
+            await AsyncStorage.removeItem('@GameFund:token');
+            
+            // Trigger auth failure
+            AsyncStorage.setItem('@GameFund:authFailure', Date.now().toString())
+              .catch(err => console.error('Failed to trigger auth failure event:', err));
+            
+            throw new Error('Invalid token format');
+          }
+          
           setAuthToken(storedToken);
           currentToken = storedToken;
         } else {

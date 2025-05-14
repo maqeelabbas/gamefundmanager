@@ -20,9 +20,16 @@ export default function App() {
       console.log('🚀 Starting app initialization');
       
       try {
+        // First reset token state in case there was a previous error
+        const { tokenValidator } = require('./src/utils/tokenValidator');
+        await tokenValidator.resetTokenState();
+        
         // Initialize auth token from storage
         await initializeAuthToken();
         console.log('🔑 Auth token initialization complete');
+        
+        // Log token diagnostics for debugging
+        await tokenValidator.logTokenDiagnostics();
       } catch (error) {
         console.error('Error initializing auth token:', error);
       }
