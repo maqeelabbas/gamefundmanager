@@ -1,0 +1,6 @@
+@GameFundManager.API_HostAddress = http://localhost:5042
+
+GET {{GameFundManager.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
