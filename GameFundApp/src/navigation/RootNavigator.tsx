@@ -13,6 +13,7 @@ import MainNavigator from './MainNavigator';
 import GroupDetailsScreen from '../screens/main/GroupDetailsScreen';
 import AddExpenseScreen from '../screens/main/AddExpenseScreen';
 import AddContributionScreen from '../screens/main/AddContributionScreen';
+import AddGroupMemberScreen from '../screens/main/AddGroupMemberScreen';
 import CreateGroupScreen from '../screens/main/CreateGroupScreen';
 import UserDetailsScreen from '../screens/main/UserDetailsScreen';
 
@@ -53,6 +54,11 @@ const RootNavigator: React.FC = () => {
               name="AddContribution" 
               component={AddContributionScreen}
               options={{ headerShown: true, title: 'Add Contribution' }}
+            />
+            <Stack.Screen 
+              name="AddGroupMember" 
+              component={AddGroupMemberScreen}
+              options={{ headerShown: true, title: 'Add Group Member' }}
             />
             <Stack.Screen 
               name="CreateGroup" 

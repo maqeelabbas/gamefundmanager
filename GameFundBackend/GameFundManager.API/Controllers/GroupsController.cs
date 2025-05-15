@@ -181,14 +181,34 @@ public class GroupsController : BaseApiController
     }
 
     [HttpGet("{groupId}/members")]
+    [SwaggerOperation(
+        Summary = "Get group members",
+        Description = "Returns a list of all members in the specified group",
+        OperationId = "GetGroupMembers",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(200, "Group members retrieved successfully", typeof(List<GroupMemberDto>))]
+    [SwaggerResponse(404, "Group not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
     public async Task<IActionResult> GetGroupMembers(Guid groupId)
     {
         var response = await _groupService.GetGroupMembersAsync(groupId);
         return HandleApiResponse(response);
     }
 
-    [HttpPost("members")]
-    public async Task<IActionResult> AddGroupMember([FromBody] AddGroupMemberDto memberDto)
+    [HttpPost("{groupId}/members")]
+    [SwaggerOperation(
+        Summary = "Add member to group",
+        Description = "Adds a user as a member to the specified group. Only group admins can add members.",
+        OperationId = "AddGroupMember",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(201, "Member added successfully", typeof(GroupMemberDto))]
+    [SwaggerResponse(400, "Invalid member information")]
+    [SwaggerResponse(403, "Not authorized to add members to this group")]
+    [SwaggerResponse(404, "Group or user not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
+    public async Task<IActionResult> AddGroupMember(Guid groupId, [FromBody] AddGroupMemberDto memberDto)
     {
         if (!ModelState.IsValid)
         {
@@ -196,15 +216,85 @@ public class GroupsController : BaseApiController
         }
 
         var userId = GetCurrentUserId();
-        var response = await _groupService.AddMemberToGroupAsync(memberDto, userId);
+        var response = await _groupService.AddMemberToGroupAsync(groupId, memberDto, userId);
         return HandleApiResponse(response);
     }
 
     [HttpDelete("{groupId}/members/{memberId}")]
+    [SwaggerOperation(
+        Summary = "Remove member from group",
+        Description = "Removes a member from the specified group. Only group admins can remove members.",
+        OperationId = "RemoveGroupMember",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(200, "Member removed successfully")]
+    [SwaggerResponse(403, "Not authorized to remove members from this group")]
+    [SwaggerResponse(404, "Group or member not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
     public async Task<IActionResult> RemoveGroupMember(Guid groupId, Guid memberId)
     {
         var userId = GetCurrentUserId();
         var response = await _groupService.RemoveMemberFromGroupAsync(groupId, memberId, userId);
+        return HandleApiResponse(response);
+    }
+
+    [HttpPatch("{groupId}/members/{memberId}/role")]
+    [SwaggerOperation(
+        Summary = "Update member role",
+        Description = "Updates a member's admin status in the specified group. Only group admins can update roles.",
+        OperationId = "UpdateMemberRole",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(200, "Member role updated successfully")]
+    [SwaggerResponse(403, "Not authorized to update roles in this group")]
+    [SwaggerResponse(404, "Group or member not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
+    public async Task<IActionResult> UpdateMemberRole(Guid groupId, Guid memberId, [FromQuery] bool isAdmin)
+    {
+        var userId = GetCurrentUserId();
+        var response = await _groupService.UpdateMemberRoleAsync(groupId, memberId, isAdmin, userId);
+        return HandleApiResponse(response);
+    }
+
+    [HttpPost("{groupId}/members/pause-contribution")]
+    [SwaggerOperation(
+        Summary = "Pause member contribution",
+        Description = "Temporarily pauses a member's contribution to the group. Only group admins can pause contributions.",
+        OperationId = "PauseMemberContribution",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(200, "Contribution paused successfully")]
+    [SwaggerResponse(400, "Invalid pause information")]
+    [SwaggerResponse(403, "Not authorized to modify contributions in this group")]
+    [SwaggerResponse(404, "Group or member not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
+    public async Task<IActionResult> PauseMemberContribution(Guid groupId, [FromBody] PauseMemberContributionDto pauseDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userId = GetCurrentUserId();
+        var response = await _groupService.PauseMemberContributionAsync(groupId, pauseDto, userId);
+        return HandleApiResponse(response);
+    }
+
+    [HttpPost("{groupId}/members/{memberId}/resume-contribution")]
+    [SwaggerOperation(
+        Summary = "Resume member contribution",
+        Description = "Resumes a previously paused member's contribution to the group. Only group admins can resume contributions.",
+        OperationId = "ResumeMemberContribution",
+        Tags = new[] { "Groups" }
+    )]
+    [SwaggerResponse(200, "Contribution resumed successfully")]
+    [SwaggerResponse(403, "Not authorized to modify contributions in this group")]
+    [SwaggerResponse(404, "Group or member not found")]
+    [SwaggerResponse(401, "Unauthorized access")]
+    public async Task<IActionResult> ResumeMemberContribution(Guid groupId, Guid memberId)
+    {
+        var userId = GetCurrentUserId();
+        var response = await _groupService.ResumeMemberContributionAsync(groupId, memberId, userId);
         return HandleApiResponse(response);
     }
 }

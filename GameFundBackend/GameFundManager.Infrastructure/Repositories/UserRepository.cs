@@ -19,9 +19,7 @@ public class UserRepository : Repository<User>, IUserRepository
     public async Task<User?> GetByUsernameAsync(string username)
     {
         return await _dbSet.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
-    }
-
-    public async Task<IEnumerable<Group>> GetUserGroupsAsync(Guid userId)
+    }    public async Task<IEnumerable<Group>> GetUserGroupsAsync(Guid userId)
     {
         var user = await _context.Users
             .Include(u => u.Memberships)
@@ -35,5 +33,19 @@ public class UserRepository : Repository<User>, IUserRepository
             .Where(gm => gm.IsActive)
             .Select(gm => gm.Group)
             .ToList();
+    }
+    
+    public async Task<IEnumerable<User>> SearchUsersAsync(string searchTerm, int maxResults = 10)
+    {
+        searchTerm = searchTerm.ToLower();
+        
+        return await _dbSet
+            .Where(u => 
+                u.FirstName.ToLower().Contains(searchTerm) || 
+                u.LastName.ToLower().Contains(searchTerm) || 
+                u.Email.ToLower().Contains(searchTerm) ||
+                (u.Username != null && u.Username.ToLower().Contains(searchTerm)))
+            .Take(maxResults)
+            .ToListAsync();
     }
 }

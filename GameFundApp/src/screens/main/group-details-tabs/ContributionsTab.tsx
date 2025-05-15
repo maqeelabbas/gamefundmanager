@@ -68,28 +68,29 @@ export const ContributionsTab: React.FC<ContributionsTabProps> = ({
           >
             <StyledText className="text-white font-bold">Try Again</StyledText>
           </StyledTouchableOpacity>
-        </StyledView>
-      ) : contributions && contributions.length > 0 ? (
+        </StyledView>      ) : contributions && contributions.length > 0 ? (
         contributions.map((contribution) => (
           <StyledView
             key={contribution.id}
             className="bg-white p-4 rounded-xl shadow-sm mb-3"
           >
-            <StyledView className="flex-row justify-between">
-              <StyledText className="font-medium text-gray-800">
+            <StyledView className="flex-row justify-between items-start">
+              <StyledText className="font-medium text-gray-800 flex-1 mr-2" numberOfLines={1} ellipsizeMode="tail">
                 {contribution.contributorUser?.firstName}{" "}
                 {contribution.contributorUser?.lastName}
               </StyledText>
-              <StyledText className="font-bold text-green-500">
+              <StyledText className="font-bold text-green-500 shrink-0">
                 {"€"} {contribution.amount.toFixed(2)}
               </StyledText>
             </StyledView>
 
             <StyledView className="flex-row justify-between mt-2">
-              <StyledText className="text-gray-500 text-xs">
-                {contribution.description || "Monthly contribution"}
-              </StyledText>
-              <StyledText className="text-gray-500 text-xs">
+              <StyledView className="flex-1 mr-3">
+                <StyledText className="text-gray-500 text-xs" numberOfLines={2} ellipsizeMode="tail">
+                  {contribution.description || "Monthly contribution"}
+                </StyledText>
+              </StyledView>
+              <StyledText className="text-gray-500 text-xs shrink-0">
                 {new Date(contribution.contributionDate).toLocaleDateString()}
               </StyledText>
             </StyledView>

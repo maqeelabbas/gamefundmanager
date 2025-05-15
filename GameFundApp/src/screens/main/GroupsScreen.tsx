@@ -75,23 +75,23 @@ const GroupsScreen: React.FC = () => {
       setFilteredGroups(groups);
     }
   };
-  
-  const renderGroupItem: ListRenderItem<Group> = ({ item }) => (
+    const renderGroupItem: ListRenderItem<Group> = ({ item }) => (
     <StyledTouchableOpacity onPress={() => navigation.navigate('GroupDetails', { groupId: item.id })}>
       <StyledView className="bg-white p-4 rounded-xl shadow-sm mb-3">
-        <StyledView className="flex-row justify-between">
-          <StyledText className="text-text font-bold">{item.name}</StyledText>
-          <StyledText className="text-primary font-bold">
-            {item.currency}{item.balance}
-          </StyledText>
-        </StyledView>
-        <StyledView className="flex-row justify-between mt-2">
-          <StyledText className="text-text text-xs">
-            {item.memberCount} members • {item.description}
-          </StyledText>
-          <StyledText className="text-text text-xs">
-            Tap to view details
-          </StyledText>
+        <StyledView className="flex-row justify-between items-start">
+          <StyledView className="flex-1 mr-3">
+            <StyledText className="text-text font-bold" numberOfLines={1} ellipsizeMode="tail">
+              {item.name}
+            </StyledText>
+            <StyledText className="text-text text-xs mt-2" numberOfLines={2} ellipsizeMode="tail">
+              {item.memberCount} members • {item.description}
+            </StyledText>
+          </StyledView>
+          <StyledView className="items-end justify-start">
+            <StyledText className="text-primary font-bold whitespace-nowrap">
+              {item.currency}{item.balance}
+            </StyledText>
+          </StyledView>
         </StyledView>
       </StyledView>
     </StyledTouchableOpacity>
@@ -148,7 +148,8 @@ const GroupsScreen: React.FC = () => {
             <StyledText className="text-white font-medium">Try Again</StyledText>
           </StyledTouchableOpacity>
         </StyledView>      ) : (
-        <StyledFlatList          data={filteredGroups as any}
+        <StyledFlatList 
+          data={filteredGroups as any}
           keyExtractor={(item: any) => item.id}
           renderItem={renderGroupItem as any}
           contentContainerStyle={{ padding: 16 }}

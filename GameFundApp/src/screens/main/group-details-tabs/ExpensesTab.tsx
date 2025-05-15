@@ -68,33 +68,34 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
           >
             <StyledText className="text-white font-bold">Try Again</StyledText>
           </StyledTouchableOpacity>
-        </StyledView>
-      ) : expenses && expenses.length > 0 ? (
+        </StyledView>      ) : expenses && expenses.length > 0 ? (
         expenses.map((expense) => (
           <StyledView
             key={expense.id}
             className="bg-white p-4 rounded-xl shadow-sm mb-3"
           >
-            <StyledView className="flex-row justify-between">
-              <StyledText className="font-bold text-gray-800">
+            <StyledView className="flex-row justify-between items-start">
+              <StyledText className="font-bold text-gray-800 flex-1 mr-2" numberOfLines={1} ellipsizeMode="tail">
                 {expense.title}
               </StyledText>
-              <StyledText className="font-bold text-red-500">
+              <StyledText className="font-bold text-red-500 shrink-0">
                 {"€"} {expense.amount.toFixed(2)}
               </StyledText>
             </StyledView>
 
             <StyledView className="flex-row justify-between mt-2">
-              <StyledText className="text-gray-500 text-xs">
-                Paid by: {expense.paidByUser?.firstName}{" "}
-                {expense.paidByUser?.lastName}
-              </StyledText>
-              <StyledText className="text-gray-500 text-xs">
+              <StyledView className="flex-1 mr-3">
+                <StyledText className="text-gray-500 text-xs" numberOfLines={1} ellipsizeMode="tail">
+                  Paid by: {expense.paidByUser?.firstName}{" "}
+                  {expense.paidByUser?.lastName}
+                </StyledText>
+              </StyledView>
+              <StyledText className="text-gray-500 text-xs shrink-0">
                 {new Date(expense.expenseDate).toLocaleDateString()}
               </StyledText>
             </StyledView>
             {expense.description && (
-              <StyledText className="text-gray-600 mt-2 text-sm">
+              <StyledText className="text-gray-600 mt-2 text-sm" numberOfLines={2} ellipsizeMode="tail">
                 {expense.description}
               </StyledText>
             )}

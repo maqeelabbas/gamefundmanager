@@ -171,7 +171,11 @@ const apiCall = async <T>(
         // Check if token needs refreshing and refresh if needed
         // But only do this for original requests, not for retries to prevent loops
         console.log('🔑 Ensuring token is valid before request');
-        await tokenService.ensureValidToken();
+        const isExpired = await tokenService.isTokenExpired();
+        if (isExpired) {
+          console.log('🔄 Token expired or about to expire, refreshing...');
+          await tokenService.refreshToken();
+        }
       } catch (tokenError) {
         console.warn('🔑 Token validation failed, proceeding with request anyway:', tokenError);
       }

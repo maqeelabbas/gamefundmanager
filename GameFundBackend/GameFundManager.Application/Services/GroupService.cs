@@ -213,9 +213,9 @@ public class GroupService : IGroupService
         return ApiResponse<IEnumerable<GroupMemberDto>>.SuccessResponse(members);
     }
 
-    public async Task<ApiResponse<GroupMemberDto>> AddMemberToGroupAsync(AddGroupMemberDto memberDto, Guid currentUserId)
+    public async Task<ApiResponse<GroupMemberDto>> AddMemberToGroupAsync(Guid groupId, AddGroupMemberDto memberDto, Guid currentUserId)
     {
-        var group = await _groupRepository.GetGroupWithMembersAsync(memberDto.GroupId);
+        var group = await _groupRepository.GetGroupWithMembersAsync(groupId);
         
         if (group == null)
             return ApiResponse<GroupMemberDto>.FailureResponse("Group not found");
@@ -245,7 +245,7 @@ public class GroupService : IGroupService
             {
                 existingMembership.IsActive = true;
                 existingMembership.IsAdmin = memberDto.IsAdmin;
-                existingMembership.ContributionQuota = memberDto.ContributionQuota;
+                existingMembership.ContributionStartDate = memberDto.ContributionStartDate;
                 
                 await _groupRepository.SaveChangesAsync();
                 
@@ -304,6 +304,111 @@ public class GroupService : IGroupService
         await _groupRepository.SaveChangesAsync();
         
         return ApiResponse<bool>.SuccessResponse(true, "Member removed from group successfully");
+    }
+    
+    public async Task<ApiResponse<bool>> UpdateMemberRoleAsync(Guid groupId, Guid memberId, bool isAdmin, Guid currentUserId)
+    {
+        // Get the group with its members
+        var group = await _groupRepository.GetGroupWithMembersAsync(groupId);
+        
+        if (group == null)
+            return ApiResponse<bool>.FailureResponse("Group not found");
+            
+        // Check if the current user is owner or admin
+        if (group.OwnerId != currentUserId)
+        {
+            var isCurrentUserAdmin = group.Members.Any(m => m.UserId == currentUserId && m.IsAdmin);
+            
+            if (!isCurrentUserAdmin)
+                return ApiResponse<bool>.FailureResponse("You don't have permission to update member roles in this group");
+        }
+        
+        // Find the member to update
+        var memberToUpdate = group.Members.FirstOrDefault(m => m.Id == memberId);
+        
+        if (memberToUpdate == null)
+            return ApiResponse<bool>.FailureResponse("Member not found in this group");
+            
+        // Don't allow changing the role of the group owner
+        if (memberToUpdate.UserId == group.OwnerId)
+            return ApiResponse<bool>.FailureResponse("Cannot change the role of the group owner");
+            
+        // Update the member's admin status
+        memberToUpdate.IsAdmin = isAdmin;
+        
+        await _groupRepository.SaveChangesAsync();
+        return ApiResponse<bool>.SuccessResponse(true, "Member role updated successfully");
+    }
+
+    public async Task<ApiResponse<bool>> PauseMemberContributionAsync(Guid groupId, PauseMemberContributionDto pauseDto, Guid currentUserId)
+    {
+        // Get the group with its members
+        var group = await _groupRepository.GetGroupWithMembersAsync(groupId);
+        
+        if (group == null)
+            return ApiResponse<bool>.FailureResponse("Group not found");
+            
+        // Check if the current user is owner or admin
+        if (group.OwnerId != currentUserId)
+        {
+            var isAdmin = group.Members.Any(m => m.UserId == currentUserId && m.IsAdmin);
+            
+            if (!isAdmin)
+                return ApiResponse<bool>.FailureResponse("You don't have permission to pause member contributions");
+        }
+        
+        // Find the member to update
+        var memberToUpdate = group.Members.FirstOrDefault(m => m.Id == Guid.Parse(pauseDto.MemberId));
+        
+        if (memberToUpdate == null)
+            return ApiResponse<bool>.FailureResponse("Member not found in this group");
+            
+        // Validate dates
+        if (pauseDto.PauseStartDate > pauseDto.PauseEndDate)
+            return ApiResponse<bool>.FailureResponse("End date must be after start date");
+            
+        if (pauseDto.PauseStartDate < DateTime.Today)
+            return ApiResponse<bool>.FailureResponse("Start date cannot be in the past");
+            
+        // Update the member's contribution status
+        memberToUpdate.IsContributionPaused = true;
+        memberToUpdate.ContributionPauseStartDate = pauseDto.PauseStartDate;
+        memberToUpdate.ContributionPauseEndDate = pauseDto.PauseEndDate;
+        
+        await _groupRepository.SaveChangesAsync();
+        return ApiResponse<bool>.SuccessResponse(true, "Member contribution paused successfully");
+    }
+    
+    public async Task<ApiResponse<bool>> ResumeMemberContributionAsync(Guid groupId, Guid memberId, Guid currentUserId)
+    {
+        // Get the group with its members
+        var group = await _groupRepository.GetGroupWithMembersAsync(groupId);
+        
+        if (group == null)
+            return ApiResponse<bool>.FailureResponse("Group not found");
+            
+        // Check if the current user is owner or admin
+        if (group.OwnerId != currentUserId)
+        {
+            var isAdmin = group.Members.Any(m => m.UserId == currentUserId && m.IsAdmin);
+            
+            if (!isAdmin)
+                return ApiResponse<bool>.FailureResponse("You don't have permission to resume member contributions");
+        }
+        
+        // Find the member to update
+        var memberToUpdate = group.Members.FirstOrDefault(m => m.Id == memberId);
+        
+        if (memberToUpdate == null)
+            return ApiResponse<bool>.FailureResponse("Member not found in this group");
+            
+        // Update the member's contribution status
+        memberToUpdate.IsContributionPaused = false;
+        memberToUpdate.ContributionPauseStartDate = null;
+        memberToUpdate.ContributionPauseEndDate = null;
+        
+        await _groupRepository.SaveChangesAsync();
+        return ApiResponse<bool>.SuccessResponse(true, "Member contribution resumed successfully");
     }
     
     // Helper methods for contribution due dates

@@ -8,4 +8,5 @@ public interface IUserService
     Task<ApiResponse<IEnumerable<UserDto>>> GetAllUsersAsync();
     Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid id);
     Task<ApiResponse<UserDto>> UpdateUserAsync(Guid id, UserDto userDto);
+    Task<ApiResponse<IEnumerable<UserSearchResponseDto>>> SearchUsersAsync(string searchTerm, int maxResults = 10);
 }

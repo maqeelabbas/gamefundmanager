@@ -42,14 +42,23 @@ export interface GroupMember {
   isAdmin: boolean;
   contributionQuota: number;
   isActive: boolean;
-  contributionsPaused?: boolean;
+  joinedDate: Date;
   contributionStartDate?: Date;
+  isContributionPaused: boolean;
+  contributionPauseStartDate?: Date;
+  contributionPauseEndDate?: Date;
 }
 
 // Add group member request model matching backend AddGroupMemberDto
 export interface AddGroupMemberRequest {
-  groupId: string;
-  email: string;
+  userId: string;
   isAdmin: boolean;
-  contributionQuota: number;
+  contributionStartDate?: Date;
+}
+
+// Pause member contribution request model matching backend PauseMemberContributionDto
+export interface PauseMemberContributionRequest {
+  memberId: string;
+  pauseStartDate: Date;
+  pauseEndDate: Date;
 }

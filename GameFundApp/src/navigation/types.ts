@@ -19,7 +19,8 @@ export type MainTabParamList = {
 // Root Navigator Types
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;  GroupDetails: { 
+  Main: NavigatorScreenParams<MainTabParamList>;  
+  GroupDetails: { 
     groupId: string;
     expenseAdded?: boolean;
     expenseAddedAt?: number;
@@ -29,6 +30,7 @@ export type RootStackParamList = {
   };
   AddExpense: { groupId?: string };
   AddContribution: { groupId?: string };
+  AddGroupMember: { groupId: string }; // New screen for adding group members
   CreateGroup: undefined;
   UserDetails: { userId: string };
   ApiDebug: undefined; // Debug screen for API connectivity

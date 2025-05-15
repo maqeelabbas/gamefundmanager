@@ -137,6 +137,18 @@ const GroupDetailsScreen: React.FC = () => {
     execute: fetchGroup
   } = useApi(() => groupService.getGroupById(groupId), true);
 
+  // Debug log for group data
+  useEffect(() => {
+    if (group) {
+      console.log('GroupDetailsScreen - Group data:', {
+        id: group.id,
+        name: group.name,
+        isUserAdmin: group.isUserAdmin,
+        memberCount: group.memberCount
+      });
+    }
+  }, [group]);
+
   // Members data
   const {
     data: groupMembers,

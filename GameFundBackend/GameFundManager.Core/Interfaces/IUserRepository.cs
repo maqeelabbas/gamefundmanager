@@ -7,4 +7,5 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByUsernameAsync(string username);
     Task<IEnumerable<Group>> GetUserGroupsAsync(Guid userId);
+    Task<IEnumerable<User>> SearchUsersAsync(string searchTerm, int maxResults = 10);
 }

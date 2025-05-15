@@ -99,4 +99,26 @@ public class UsersController : BaseApiController
         var response = await _userService.UpdateUserAsync(id, userDto); 
         return HandleApiResponse(response);
     }
+
+    /// <summary>
+    /// Search for users by name or email
+    /// </summary>
+    /// <param name="term">Search term (minimum 2 characters)</param>
+    /// <param name="limit">Maximum number of results to return</param>
+    /// <returns>List of matching users</returns>
+    [HttpGet("search")]
+    [SwaggerOperation(
+        Summary = "Search for users by name or email",
+        Description = "Returns a list of users matching the search term",
+        OperationId = "SearchUsers",
+        Tags = new[] { "Users" }
+    )]
+    [SwaggerResponse(200, "Users found successfully", typeof(List<UserSearchResponseDto>))]
+    [SwaggerResponse(400, "Invalid search parameters")]
+    [SwaggerResponse(401, "Unauthorized access")]
+    public async Task<IActionResult> SearchUsers([FromQuery] string term, [FromQuery] int limit = 10)
+    {
+        var response = await _userService.SearchUsersAsync(term, limit);
+        return HandleApiResponse(response);
+    }
 }

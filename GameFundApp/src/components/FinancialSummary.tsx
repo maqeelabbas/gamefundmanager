@@ -165,28 +165,29 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <StyledText className="text-white">Try Again</StyledText>
             </StyledTouchableOpacity>
           </StyledView>
-        ) : expenses && expenses.length > 0 ? (
-          expenses.slice(0, 3).map((expense: Expense) => (
+        ) : expenses && expenses.length > 0 ? (          expenses.slice(0, 3).map((expense: Expense) => (
             <StyledView
               key={expense.id}
               className="bg-white p-4 rounded-xl shadow-sm mb-3"
             >
-              <StyledView className="flex-row justify-between">
-                <StyledText className="text-text font-bold">
+              <StyledView className="flex-row justify-between items-start">
+                <StyledText className="text-text font-bold flex-1 mr-2" numberOfLines={1} ellipsizeMode="tail">
                   {expense.title}
                 </StyledText>
-                <StyledText className="text-red-500 font-bold">
+                <StyledText className="text-red-500 font-bold shrink-0">
                   {"€"} {expense.amount.toFixed(2)}
                 </StyledText>
               </StyledView>
               <StyledView className="flex-row justify-between mt-2">
-                <StyledText className="text-gray-500 text-xs">
-                  Paid by:
-                  {expense.paidByUser
-                    ? `${expense.paidByUser.firstName} ${expense.paidByUser.lastName}`
-                    : "Unknown"}
-                </StyledText>
-                <StyledText className="text-gray-500 text-xs">
+                <StyledView className="flex-1 mr-3">
+                  <StyledText className="text-gray-500 text-xs" numberOfLines={1} ellipsizeMode="tail">
+                    Paid by:
+                    {expense.paidByUser
+                      ? ` ${expense.paidByUser.firstName} ${expense.paidByUser.lastName}`
+                      : " Unknown"}
+                  </StyledText>
+                </StyledView>
+                <StyledText className="text-gray-500 text-xs shrink-0">
                   {new Date(expense.expenseDate).toLocaleDateString()}
                 </StyledText>
               </StyledView>
@@ -242,28 +243,29 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({
               <StyledText className="text-white">Try Again</StyledText>
             </StyledTouchableOpacity>
           </StyledView>
-        ) : contributions && contributions.length > 0 ? (
-          contributions.slice(0, 3).map((contribution: Contribution) => (
+        ) : contributions && contributions.length > 0 ? (          contributions.slice(0, 3).map((contribution: Contribution) => (
             <StyledView
               key={contribution.id}
               className="bg-white p-4 rounded-xl shadow-sm mb-3"
             >
-              <StyledView className="flex-row justify-between">
-                <StyledText className="text-text font-bold">
+              <StyledView className="flex-row justify-between items-start">
+                <StyledText className="text-text font-bold flex-1 mr-2" numberOfLines={1} ellipsizeMode="tail">
                   {contribution.contributorUser
                     ? `${contribution.contributorUser.firstName} ${contribution.contributorUser.lastName}`
                     : "Unknown User"}
                 </StyledText>
-                <StyledText className="text-green-600 font-bold">
+                <StyledText className="text-green-600 font-bold shrink-0">
                   {"€"} {contribution.amount.toFixed(2)}
                 </StyledText>
               </StyledView>
 
               <StyledView className="flex-row justify-between mt-2">
-                <StyledText className="text-gray-500 text-xs">
-                  {contribution.description || "Monthly contribution"}
-                </StyledText>
-                <StyledText className="text-gray-500 text-xs">
+                <StyledView className="flex-1 mr-3">
+                  <StyledText className="text-gray-500 text-xs" numberOfLines={2} ellipsizeMode="tail">
+                    {contribution.description || "Monthly contribution"}
+                  </StyledText>
+                </StyledView>
+                <StyledText className="text-gray-500 text-xs shrink-0">
                   {new Date(contribution.contributionDate).toLocaleDateString()}
                 </StyledText>
               </StyledView>

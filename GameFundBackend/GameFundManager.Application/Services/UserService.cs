@@ -55,4 +55,32 @@ public class UserService : IUserService
         var updatedUserDto = _mapper.Map<UserDto>(user);
         return ApiResponse<UserDto>.SuccessResponse(updatedUserDto, "User updated successfully");
     }
+
+    public async Task<ApiResponse<IEnumerable<UserSearchResponseDto>>> SearchUsersAsync(string searchTerm, int maxResults = 10)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 2)
+            {
+                return ApiResponse<IEnumerable<UserSearchResponseDto>>.FailureResponse("Search term must be at least 2 characters");
+            }
+            
+            var users = await _userRepository.SearchUsersAsync(searchTerm, maxResults);
+            
+            var result = users.Select(u => new UserSearchResponseDto
+            {
+                Id = u.Id.ToString(),
+                Name = $"{u.FirstName} {u.LastName}",
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                ProfilePictureUrl = u.ProfilePictureUrl
+            }).ToList();
+            
+            return ApiResponse<IEnumerable<UserSearchResponseDto>>.SuccessResponse(result, $"Found {result.Count} users");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<IEnumerable<UserSearchResponseDto>>.FailureResponse($"Error searching users: {ex.Message}");
+        }
+    }
 }
