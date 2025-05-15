@@ -21,12 +21,17 @@ type CreateGroupScreenNavigationProp = NativeStackNavigationProp<RootStackParamL
 const sportTypes = [
   'Badminton', 
   'Basketball',
+  'Billiards',
+  'Bowling',
   'Cricket', 
   'Football',
   'Tennis',
   'Volleyball',
   'Other'
 ];
+
+// Available days for contribution due date
+const dueDays = Array.from({ length: 28 }, (_, i) => i + 1);
 
 const CreateGroupScreen: React.FC = () => {
   const navigation = useNavigation<CreateGroupScreenNavigationProp>();
@@ -35,7 +40,9 @@ const CreateGroupScreen: React.FC = () => {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
+  const [contributionDueDay, setContributionDueDay] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const handleCreateGroup = async () => {
     if (!name || !selectedSport) {
       Alert.alert('Error', 'Please fill in all required fields');
@@ -44,12 +51,13 @@ const CreateGroupScreen: React.FC = () => {
 
     setIsLoading(true);
 
-    try {      // Create group data object
-      const groupData: CreateGroupRequest = {
-        name,
+    try {
+      // Create group data object
+      const groupData: CreateGroupRequest = {        name,
         description: description || `${name} - ${selectedSport} group`,
         targetAmount: 0, // Default value, could be added as a form field
-        currency: 'USD',
+        currency: 'EUR',
+        contributionDueDay: contributionDueDay || undefined,
       };
       
       // Call the API to create the group
@@ -133,7 +141,7 @@ const CreateGroupScreen: React.FC = () => {
           />
           
           {/* Contribution Amount */}
-          <StyledText className="text-sm font-medium text-text mb-2">Monthly Contribution Amount (USD)</StyledText>
+          <StyledText className="text-sm font-medium text-text mb-2">Monthly Contribution Amount (EUR)</StyledText>
           <StyledTextInput
             className="border border-gray-300 rounded-lg p-3 mb-4 text-text"
             placeholder="Enter amount"
@@ -142,11 +150,30 @@ const CreateGroupScreen: React.FC = () => {
             onChangeText={setContributionAmount}
           />
           
-          {/* Target Amount and Currency */}
-          <StyledText className="text-sm font-medium text-text mb-2">Target Amount (Optional)</StyledText>
+          {/* Contribution Due Day Selection */}
+          <StyledText className="text-sm font-medium text-text mb-2">Monthly Due Day</StyledText>
+          <StyledView className="flex-row flex-wrap mb-4">
+            {dueDays.map(day => (
+              <StyledTouchableOpacity
+                key={day}
+                className={`border rounded-full w-10 h-10 items-center justify-center mr-2 mb-2 ${
+                  contributionDueDay === day ? 'border-primary bg-primary' : 'border-gray-300'
+                }`}
+                onPress={() => setContributionDueDay(day)}
+              >
+                <StyledText 
+                  className={`${contributionDueDay === day ? 'text-white font-medium' : 'text-text'}`}
+                >
+                  {day}
+                </StyledText>
+              </StyledTouchableOpacity>
+            ))}
+          </StyledView>
+          
+          {/* Target Amount and Currency */}          <StyledText className="text-sm font-medium text-text mb-2">Target Amount (Optional)</StyledText>
           <StyledView className="flex-row items-center mb-4">
             <StyledView className="border border-gray-300 rounded-lg p-3 pr-0 w-24 mr-2 justify-center">
-              <StyledText className="text-text">USD</StyledText>
+              <StyledText className="text-text">{"€"}</StyledText>
             </StyledView>
             <StyledTextInput
               className="border border-gray-300 rounded-lg p-3 flex-1 text-text"

@@ -216,9 +216,8 @@ const AddExpenseScreen: React.FC = () => {
             value={title}
             onChangeText={setTitle}
           />
-          
-          {/* Amount Input */}
-          <StyledText className="text-sm font-medium text-text mb-2">Amount (USD) *</StyledText>
+            {/* Amount Input */}
+          <StyledText className="text-sm font-medium text-text mb-2">Amount ({"€"}) *</StyledText>
           <StyledTextInput
             className="border border-gray-300 rounded-lg p-3 mb-4 text-text"
             placeholder="Enter amount"

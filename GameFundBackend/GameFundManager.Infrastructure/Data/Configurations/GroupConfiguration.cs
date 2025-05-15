@@ -25,7 +25,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.Currency)
             .IsRequired()
             .HasMaxLength(3)
-            .HasDefaultValue("USD");
+            .HasDefaultValue("EUR");
             
         // Relationships
         builder.HasMany(g => g.Members)

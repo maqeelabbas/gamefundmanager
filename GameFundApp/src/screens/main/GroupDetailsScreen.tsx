@@ -21,6 +21,7 @@ import { contributionService } from '../../services/contribution.service';
 import { pollService } from '../../services/poll.service';
 import { RootStackParamList } from '../../navigation/types';
 import { CreateGroupRequest } from '../../models';
+import { EditGroupForm } from '../../components';
 
 // Import tab components
 import {
@@ -181,15 +182,15 @@ const GroupDetailsScreen: React.FC = () => {
     execute: leaveGroupAPI
   } = useApi(() => 
     groupService.removeGroupMember(groupId, user?.id || ''), false);
-  
-  // Initialize form data when group is loaded
+    // Initialize form data when group is loaded
   useEffect(() => {
     if (group) {
       setGroupForm({
         name: group.name,
         description: group.description,
         targetAmount: group.targetAmount,
-        currency: group.currency
+        currency: group.currency,
+        contributionDueDay: group.contributionDueDay
       });
     }
   }, [group]);
@@ -307,8 +308,7 @@ const GroupDetailsScreen: React.FC = () => {
     await refreshCurrentTabData();
     setRefreshing(false);
   }, [refreshCurrentTabData]);
-  
-  // Calculate financial info
+    // Calculate financial info
   const getTotalContributions = () => {
     return group?.totalContributions || 0;
   };
@@ -334,7 +334,8 @@ const GroupDetailsScreen: React.FC = () => {
           name: group.name,
           description: group.description,
           targetAmount: group.targetAmount,
-          currency: group.currency
+          currency: group.currency,
+          contributionDueDay: group.contributionDueDay
         });
       }
     }
@@ -398,11 +399,23 @@ const GroupDetailsScreen: React.FC = () => {
   // Render functions for different tabs
   // All these functions are defined regardless of the active tab to 
   // ensure consistent hook execution order
-    // Content for the active tab
   // Content for the active tab
   const renderTabContent = () => {
     switch (activeTab) {
       case "summary":
+        // If in editing mode, show the EditGroupForm
+        if (isEditing && group) {
+          return (
+            <EditGroupForm
+              group={group}
+              isLoading={updateLoading} 
+              onSave={handleGroupUpdate}
+              onCancel={handleEditToggle}
+            />
+          );
+        }
+        
+        // Otherwise show the regular summary tab
         return (
           <SummaryTab
             groupId={groupId}

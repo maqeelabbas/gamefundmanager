@@ -18,23 +18,25 @@ public class GroupService : IGroupService
         _groupRepository = groupRepository;
         _userRepository = userRepository;
         _mapper = mapper;
-    }
-
-    public async Task<ApiResponse<IEnumerable<GroupDto>>> GetAllGroupsAsync()
+    }    public async Task<ApiResponse<IEnumerable<GroupDto>>> GetAllGroupsAsync()
     {
         var groups = await _groupRepository.GetAllAsync();
         var groupDtos = _mapper.Map<IEnumerable<GroupDto>>(groups).ToList();
         
-        foreach (var groupDto in groupDtos)
+        for (int i = 0; i < groups.Count(); i++)
         {
+            var group = groups.ElementAt(i);
+            var groupDto = groupDtos[i];
+            
             groupDto.TotalContributions = await _groupRepository.GetTotalContributionsAsync(groupDto.Id);
             groupDto.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(groupDto.Id);
+            
+            // Enrich with due date info
+            groupDto.EnrichWithDueDateInfo(group);
         }
         
         return ApiResponse<IEnumerable<GroupDto>>.SuccessResponse(groupDtos);
-    }
-
-    public async Task<ApiResponse<GroupDto>> GetGroupByIdAsync(Guid id)
+    }    public async Task<ApiResponse<GroupDto>> GetGroupByIdAsync(Guid id)
     {
         var group = await _groupRepository.GetGroupWithMembersAsync(id);
         
@@ -45,10 +47,20 @@ public class GroupService : IGroupService
         groupDto.TotalContributions = await _groupRepository.GetTotalContributionsAsync(id);
         groupDto.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(id);
         
+        // Add contribution due day information
+        if (group.DueDate.HasValue)
+        {
+            groupDto.ContributionDueDay = group.DueDate.Value.Day;
+            groupDto.NextContributionDueDate = GetNextDueDate(group);
+            
+            // Format the due day as a string (e.g., "15th")
+            int dueDay = group.DueDate.Value.Day;
+            string suffix = GetDaySuffix(dueDay);
+            groupDto.ContributionDueDayFormatted = $"{dueDay}{suffix}";
+        }
+        
         return ApiResponse<GroupDto>.SuccessResponse(groupDto);
-    }
-
-    public async Task<ApiResponse<IEnumerable<GroupDto>>> GetUserGroupsAsync(Guid userId)
+    }    public async Task<ApiResponse<IEnumerable<GroupDto>>> GetUserGroupsAsync(Guid userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);
         
@@ -58,10 +70,25 @@ public class GroupService : IGroupService
         var groups = await _userRepository.GetUserGroupsAsync(userId);
         var groupDtos = _mapper.Map<IEnumerable<GroupDto>>(groups).ToList();
         
-        foreach (var groupDto in groupDtos)
+        for (int i = 0; i < groups.Count(); i++)
         {
+            var group = groups.ElementAt(i);
+            var groupDto = groupDtos[i];
+            
             groupDto.TotalContributions = await _groupRepository.GetTotalContributionsAsync(groupDto.Id);
             groupDto.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(groupDto.Id);
+            
+            // Add contribution due day information
+            if (group.DueDate.HasValue)
+            {
+                groupDto.ContributionDueDay = group.DueDate.Value.Day;
+                groupDto.NextContributionDueDate = GetNextDueDate(group);
+                
+                // Format the due day as a string (e.g., "15th")
+                int dueDay = group.DueDate.Value.Day;
+                string suffix = GetDaySuffix(dueDay);
+                groupDto.ContributionDueDayFormatted = $"{dueDay}{suffix}";
+            }
         }
         
         return ApiResponse<IEnumerable<GroupDto>>.SuccessResponse(groupDtos);
@@ -89,11 +116,22 @@ public class GroupService : IGroupService
         
         group.Members.Add(groupMember);
         await _groupRepository.SaveChangesAsync();
-        
-        var result = _mapper.Map<GroupDto>(group);
+          var result = _mapper.Map<GroupDto>(group);
         result.Owner = _mapper.Map<UserDto>(user);
         result.TotalContributions = 0;
         result.TotalExpenses = 0;
+        
+        // Add contribution due day information
+        if (group.DueDate.HasValue)
+        {
+            result.ContributionDueDay = group.DueDate.Value.Day;
+            result.NextContributionDueDate = GetNextDueDate(group);
+            
+            // Format the due day as a string (e.g., "15th")
+            int dueDay = group.DueDate.Value.Day;
+            string suffix = GetDaySuffix(dueDay);
+            result.ContributionDueDayFormatted = $"{dueDay}{suffix}";
+        }
         
         return ApiResponse<GroupDto>.SuccessResponse(result, "Group created successfully");
     }
@@ -112,9 +150,7 @@ public class GroupService : IGroupService
             
             if (!isAdmin)
                 return ApiResponse<GroupDto>.FailureResponse("You don't have permission to update this group");
-        }
-        
-        // Update group properties
+        }        // Update group properties
         group.Name = groupDto.Name;
         group.Description = groupDto.Description;
         group.LogoUrl = groupDto.LogoUrl;
@@ -124,12 +160,26 @@ public class GroupService : IGroupService
         
         await _groupRepository.UpdateAsync(group);
         await _groupRepository.SaveChangesAsync();
-        
-        // Get updated group with members
+          // Get updated group with members
         group = await _groupRepository.GetGroupWithMembersAsync(id);
         var groupDto2 = _mapper.Map<GroupDto>(group);
         groupDto2.TotalContributions = await _groupRepository.GetTotalContributionsAsync(id);
         groupDto2.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(id);
+          // Add contribution due day information
+        if (group.DueDate.HasValue)
+        {
+            groupDto2.ContributionDueDay = group.DueDate.Value.Day;
+            groupDto2.NextContributionDueDate = GetNextDueDate(group);
+            
+            // Format the due day as a string (e.g., "15th")
+            int dueDay = group.DueDate.Value.Day;
+            string suffix = GetDaySuffix(dueDay);
+            groupDto2.ContributionDueDayFormatted = $"{dueDay}{suffix}";
+        }
+        else
+        {
+            groupDto2.ContributionDueDayFormatted = "Not set";
+        }
         
         return ApiResponse<GroupDto>.SuccessResponse(groupDto2, "Group updated successfully");
     }
@@ -254,5 +304,52 @@ public class GroupService : IGroupService
         await _groupRepository.SaveChangesAsync();
         
         return ApiResponse<bool>.SuccessResponse(true, "Member removed from group successfully");
+    }
+    
+    // Helper methods for contribution due dates
+    
+    /// <summary>
+    /// Gets the next due date based on the current date and the due day
+    /// </summary>
+    /// <param name="group">The group entity</param>
+    /// <returns>The next due date based on the current month or the following month</returns>
+    private DateTime? GetNextDueDate(Group group)
+    {
+        if (!group.DueDate.HasValue)
+        {
+            return null;
+        }
+        
+        int dueDay = group.DueDate.Value.Day;
+        DateTime today = DateTime.Today;
+        
+        // If we're already past the due day in the current month, 
+        // get the due date for next month
+        if (today.Day > dueDay)
+        {
+            return new DateTime(today.Year, today.Month, 1).AddMonths(1).AddDays(dueDay - 1);
+        }
+        
+        // Otherwise, use the due date of the current month
+        return new DateTime(today.Year, today.Month, dueDay);
+    }
+    
+    /// <summary>
+    /// Gets the English ordinal suffix for a day number (1st, 2nd, 3rd, etc.)
+    /// </summary>
+    private string GetDaySuffix(int day)
+    {
+        if (day >= 11 && day <= 13)
+        {
+            return "th";
+        }
+        
+        switch (day % 10)
+        {
+            case 1:  return "st";
+            case 2:  return "nd";
+            case 3:  return "rd";
+            default: return "th";
+        }
     }
 }

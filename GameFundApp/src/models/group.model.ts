@@ -18,6 +18,9 @@ export interface Group {
   balance: number;
   progressPercentage: number;
   isUserAdmin?: boolean; // Indicates if the current user is an admin for this group
+  contributionDueDay?: number;
+  nextContributionDueDate?: Date;
+  contributionDueDayFormatted?: string;
 }
 
 // Create group request model matching backend CreateGroupDto
@@ -28,6 +31,7 @@ export interface CreateGroupRequest {
   targetAmount: number;
   dueDate?: Date;
   currency: string;
+  contributionDueDay?: number;
 }
 
 // Group member model matching backend GroupMemberDto

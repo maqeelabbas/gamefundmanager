@@ -83,7 +83,7 @@ public static class DbInitializer
                 Description = "Our local Cricket team fund for equipment and tournaments",
                 TargetAmount = 1000,
                 DueDate = DateTime.UtcNow.AddMonths(3),
-                Currency = "USD",
+                Currency = "EUR",
                 OwnerId = adminUser.Id,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true

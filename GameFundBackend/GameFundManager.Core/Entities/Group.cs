@@ -4,11 +4,10 @@ public class Group : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string? LogoUrl { get; set; }
-    public decimal TargetAmount { get; set; }
-    public DateTime? DueDate { get; set; }
+    public string? LogoUrl { get; set; }    public decimal TargetAmount { get; set; }
+    public DateTime? DueDate { get; set; } // Contains both the target date and the monthly due day
     public bool IsActive { get; set; } = true;
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
     
     // Foreign keys
     public Guid OwnerId { get; set; }

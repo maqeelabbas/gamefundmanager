@@ -1,10 +1,14 @@
-import React from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { StyledView, StyledText, StyledTouchableOpacity } from "../../../utils/StyledComponents";
-import { Expense } from '../../../models/expense.model';
-import { RootStackParamList } from '../../../navigation/types';
+import React from "react";
+import { ActivityIndicator, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  StyledView,
+  StyledText,
+  StyledTouchableOpacity,
+} from "../../../utils/StyledComponents";
+import { Expense } from "../../../models/expense.model";
+import { RootStackParamList } from "../../../navigation/types";
 
 type GroupDetailsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,8 +33,8 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
   loadingExpenses,
   expensesError,
   fetchExpenses,
-  currency = 'USD',
-  navigation
+  currency = "EUR",
+  navigation,
 }) => {
   return (
     <StyledView className="px-4 mb-6">
@@ -38,16 +42,14 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
         <StyledText className="text-lg font-bold text-gray-800">
           Expenses
         </StyledText>
-        <StyledTouchableOpacity 
+        <StyledTouchableOpacity
           className="bg-primary py-2 px-4 rounded-lg"
-          onPress={() => navigation.navigate('AddExpense', { groupId })}
+          onPress={() => navigation.navigate("AddExpense", { groupId })}
         >
-          <StyledText className="text-white font-bold">
-            Add New
-          </StyledText>
+          <StyledText className="text-white font-bold">Add New</StyledText>
         </StyledTouchableOpacity>
       </StyledView>
-      
+
       {loadingExpenses ? (
         <StyledView className="items-center justify-center p-10">
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -64,29 +66,28 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({
             className="bg-primary py-2 px-4 rounded-lg"
             onPress={() => fetchExpenses()}
           >
-            <StyledText className="text-white font-bold">
-              Try Again
-            </StyledText>
+            <StyledText className="text-white font-bold">Try Again</StyledText>
           </StyledTouchableOpacity>
         </StyledView>
       ) : expenses && expenses.length > 0 ? (
         expenses.map((expense) => (
-          <StyledView 
-            key={expense.id} 
+          <StyledView
+            key={expense.id}
             className="bg-white p-4 rounded-xl shadow-sm mb-3"
           >
             <StyledView className="flex-row justify-between">
               <StyledText className="font-bold text-gray-800">
-                {expense.title} {expense.statusName}
+                {expense.title}
               </StyledText>
               <StyledText className="font-bold text-red-500">
-                {currency} {expense.amount.toFixed(2)}
+                {"€"} {expense.amount.toFixed(2)}
               </StyledText>
             </StyledView>
-            
+
             <StyledView className="flex-row justify-between mt-2">
               <StyledText className="text-gray-500 text-xs">
-                Paid by: {expense.paidByUser?.firstName} {expense.paidByUser?.lastName}
+                Paid by: {expense.paidByUser?.firstName}{" "}
+                {expense.paidByUser?.lastName}
               </StyledText>
               <StyledText className="text-gray-500 text-xs">
                 {new Date(expense.expenseDate).toLocaleDateString()}
