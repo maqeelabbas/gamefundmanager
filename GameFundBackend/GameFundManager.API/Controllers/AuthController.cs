@@ -133,6 +133,30 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
+    /// Validate token without refreshing
+    /// </summary>
+    /// <returns>Validation result</returns>
+    [HttpGet("validate-token")]
+    [Authorize]
+    [SwaggerOperation(
+        Summary = "Validate an authentication token",
+        Description = "Validates the current token without refreshing it",
+        OperationId = "ValidateToken",
+        Tags = new[] { "Authentication" }
+    )]
+    [SwaggerResponse(200, "Token is valid")]
+    [SwaggerResponse(401, "Token is invalid or expired")]
+    public IActionResult ValidateToken()
+    {
+        // If we get here, the token is valid (because of the [Authorize] attribute)
+        return Ok(new
+        {
+            success = true,
+            message = "Token is valid",
+            data = new { isValid = true, userId = GetCurrentUserId() },
+            errors = (string[])null
+        });
+    }    /// <summary>
     /// Health check endpoint to test API connectivity
     /// </summary>
     /// <returns>API status information</returns>
@@ -162,7 +186,7 @@ public class AuthController : BaseApiController
             success = true,
             message = "API is operational",
             data = connectionInfo,
-            errors = (string[])null
+            errors = (string[]?)null
         });
     }
 }

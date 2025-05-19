@@ -88,7 +88,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
         </StyledView>
         <StyledView className="flex-row justify-between">
           <StyledText className="text-gray-500 text-sm">
-            {getProgressPercentage()}% Complete
+            {getProgressPercentage().toFixed(2)}% Complete
           </StyledText>
           <StyledText className="text-gray-500 text-sm">
             {"€"} {remainingAmount.toFixed(2)} remaining
@@ -134,7 +134,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
           <StyledView className="flex-row justify-between mb-1">
             <StyledText className="text-gray-500">Progress</StyledText>
             <StyledText className="font-medium">
-              {getProgressPercentage()}%
+              {getProgressPercentage().toFixed(2)}%
             </StyledText>
           </StyledView>
 

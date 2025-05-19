@@ -56,7 +56,7 @@ const CreateGroupScreen: React.FC = () => {
 
     try {
       // Create group data object
-      const groupData: CreateGroupRequest = {
+      let groupData: CreateGroupRequest = {
         name,
         description: description || `${name} - ${selectedSport} group`,
         targetAmount: 0, // Default value, could be added as a form field
@@ -65,7 +65,7 @@ const CreateGroupScreen: React.FC = () => {
       };
 
       // Call the API to create the group
-      const createdGroup = await groupService.createGroup(groupData);
+      let createdGroup = await groupService.createGroup(groupData);
 
       // Show success message
       Alert.alert("Success", "Group created successfully!", [

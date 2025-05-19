@@ -23,13 +23,12 @@ export const EditGroupForm: React.FC<EditGroupFormProps> = ({
   isLoading,
   onSave,
   onCancel
-}) => {
-  const [formData, setFormData] = useState<Partial<CreateGroupRequest>>({
+}) => {  const [formData, setFormData] = useState<Partial<CreateGroupRequest>>({
     name: group.name,
     description: group.description,
-    targetAmount: group.targetAmount,
+    targetAmount: group.targetAmount ? Number(group.targetAmount) : 0,
     currency: group.currency,
-    contributionDueDay: group.contributionDueDay
+    contributionDueDay: group.contributionDueDay ? Number(group.contributionDueDay) : 1
   });
 
   // Update form data if group changes
@@ -37,18 +36,56 @@ export const EditGroupForm: React.FC<EditGroupFormProps> = ({
     setFormData({
       name: group.name,
       description: group.description,
-      targetAmount: group.targetAmount,
+      targetAmount: Number(group.targetAmount) || 0,
       currency: group.currency,
-      contributionDueDay: group.contributionDueDay
+      contributionDueDay: Number(group.contributionDueDay) || 1
     });
   }, [group]);
-
   const handleChange = (field: keyof CreateGroupRequest, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = () => {
-    onSave(formData);
+    if (field === 'targetAmount') {
+      // Ensure target amount is a valid number
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      setFormData((prev) => ({ ...prev, [field]: isNaN(numValue) ? 0 : numValue }));
+    } else if (field === 'contributionDueDay') {
+      // Ensure contribution due day is a valid number
+      const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+      setFormData((prev) => ({ ...prev, [field]: isNaN(numValue) ? 1 : numValue }));
+    } else {
+      // Handle string fields normally
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+  };  const handleSubmit = () => {
+    // Get the contribution due day (with fallback)
+    const contributionDay = formData.contributionDueDay !== undefined && formData.contributionDueDay !== null
+      ? Number(formData.contributionDueDay)
+      : (group.contributionDueDay ? Number(group.contributionDueDay) : 1);
+    
+    // Create a due date based on the contributionDueDay
+    // Use the current month, but set the day to the contributionDueDay
+    const today = new Date();
+    let dueDate = new Date(today.getFullYear(), today.getMonth(), contributionDay);
+    
+    // If the calculated date is in the past, move to next month
+    if (dueDate < today) {
+      dueDate = new Date(today.getFullYear(), today.getMonth() + 1, contributionDay);
+    }
+    
+    // Ensure contributionDueDay is a number and not null
+    const updatedFormData = {
+      ...formData,
+      // Make sure contributionDueDay is a valid number between 1 and 28
+      contributionDueDay: contributionDay,
+      // Make sure targetAmount is a valid number
+      targetAmount: formData.targetAmount !== undefined && formData.targetAmount !== null
+        ? Number(formData.targetAmount)
+        : (group.targetAmount ? Number(group.targetAmount) : 0),
+      // Include the calculated due date
+      dueDate: dueDate
+    };
+    
+    // Log the submitted data for debugging
+    console.log('Submitting group form data:', updatedFormData);
+    onSave(updatedFormData);
   };
 
   return (

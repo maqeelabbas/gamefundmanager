@@ -164,9 +164,8 @@ public class GroupService : IGroupService
         group = await _groupRepository.GetGroupWithMembersAsync(id);
         var groupDto2 = _mapper.Map<GroupDto>(group);
         groupDto2.TotalContributions = await _groupRepository.GetTotalContributionsAsync(id);
-        groupDto2.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(id);
-          // Add contribution due day information
-        if (group.DueDate.HasValue)
+        groupDto2.TotalExpenses = await _groupRepository.GetTotalExpensesAsync(id);        // Add contribution due day information
+        if (group != null && group.DueDate.HasValue)
         {
             groupDto2.ContributionDueDay = group.DueDate.Value.Day;
             groupDto2.NextContributionDueDate = GetNextDueDate(group);

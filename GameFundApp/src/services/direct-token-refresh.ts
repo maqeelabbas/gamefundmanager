@@ -17,14 +17,12 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Authorization': `Bearer ${cleanToken}`
-    };
-
-    // Prepare request options - don't send token in both headers and body to avoid confusion
+    };    // Prepare request options - include token in the body and Authorization header for backend compatibility
     const options: RequestInit = {
       method: 'POST',
       headers,
-      // Only include token in Authorization header, not in body
-      body: JSON.stringify({}),
+      // Include token in body as required by the backend API
+      body: JSON.stringify({ token: cleanToken }),
       mode: 'cors',
       cache: 'no-cache',
       credentials: 'include'
@@ -49,8 +47,7 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
       console.error('❌ Token refresh failed with 401 Unauthorized - token is invalid');
       return { success: false };
     }
-    
-    // Parse response
+      // Parse response
     const text = await response.text();
     console.log('🔄 Refresh response text:', text.length > 100 ? `${text.substring(0, 100)}...` : text);
     
@@ -59,8 +56,7 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
       console.error('❌ Empty response from refresh token endpoint');
       return { success: false };
     }
-    
-    let data;
+      let data;
     try {
       data = JSON.parse(text);
       console.log('🔄 Parsed refresh response:', JSON.stringify(data, null, 2));
@@ -74,15 +70,20 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
       return { success: false };
     }
     
-    if (!data.success) {
-      console.error('❌ Token refresh failed:', data.message || 'API returned success: false');
+    // Check if the response has the expected structure with success flag and data object
+    if (!data.success || !data.data) {
+      console.error('❌ Token refresh failed: Invalid response format', data);
       return { success: false };
     }
-
-    return {
+    
+    // Make sure we have token and expiry information
+    if (!data.data.token) {
+      console.error('❌ Token refresh failed: No token in response');
+      return { success: false };
+    }    return {
       success: true,
-      token: data.data?.token,
-      tokenExpires: data.data?.tokenExpires
+      token: data.data.token,
+      tokenExpires: data.data.tokenExpires
     };
   } catch (error) {
     console.error('❌ Error during direct token refresh:', error);

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth.service';
 import { Platform } from 'react-native';
 import { setAuthToken } from '../services/http.service';
+import { authDebugger } from '../utils/authDebugger';
 
 // Import types from models
 import { User as ApiUser } from '../models/user.model';
@@ -26,6 +27,8 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUserInfo: (updatedUser: Partial<User>) => void;
+  resetTokenState: () => Promise<void>;
+  debugAuthState: () => Promise<void>;
 }
 
 // Keys for AsyncStorage
@@ -41,6 +44,8 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => {},
   logout: () => {},
   updateUserInfo: () => {},
+  resetTokenState: async () => {},
+  debugAuthState: async () => {},
 });
 
 // Provider component
@@ -259,6 +264,26 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       console.warn('⚠️ Cannot update user info: No user is currently logged in');
     }
   };
+  // Reset token state
+  const resetTokenState = async () => {
+    try {
+      console.log('🔄 Resetting token state...');
+      await authDebugger.resetTokenState();
+      console.log('✅ Token state reset complete');
+    } catch (error) {
+      console.error('❌ Error resetting token state:', error);
+    }
+  };
+
+  // Debug auth state
+  const debugAuthState = async () => {
+    try {
+      console.log('🔍 Running auth diagnostics...');
+      await authDebugger.logAuthState();
+    } catch (error) {
+      console.error('❌ Error in auth diagnostics:', error);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -268,7 +293,9 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       login, 
       register, 
       logout,
-      updateUserInfo
+      updateUserInfo,
+      resetTokenState,
+      debugAuthState
     }}>
       {children}
     </AuthContext.Provider>

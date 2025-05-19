@@ -353,15 +353,19 @@ const GroupDetailsScreen: React.FC = () => {
     }
     setIsEditing(!isEditing);
   };
-  
-  const handleGroupUpdate = async () => {
+    const handleGroupUpdate = async (updatedGroupData?: Partial<CreateGroupRequest>) => {
     try {
-      if (!groupForm.name) {
+      // Use the provided data or fall back to groupForm state
+      const dataToSubmit = updatedGroupData || groupForm;
+      
+      console.log('Updating group with data:', dataToSubmit);
+      
+      if (!dataToSubmit.name) {
         Alert.alert("Validation Error", "Group name is required");
         return;
       }
       
-      const updatedGroup = await updateGroup(groupForm);
+      const updatedGroup = await updateGroup(dataToSubmit);
       
       if (updatedGroup) {
         setIsEditing(false);

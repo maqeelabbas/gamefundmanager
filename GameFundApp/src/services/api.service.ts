@@ -299,14 +299,18 @@ const apiCall = async <T>(
               // Clear the token on unrecoverable errors
               console.log('🔑 Clearing token due to refresh error');
               setAuthToken(null);
-            }
-          } else {
+            }          } else {
             console.warn('🔄 Not attempting token refresh on retry request to prevent loops');
           }
-              // If we get here, token refresh failed or wasn't possible
-          // Clear the token as it's likely invalid
-          console.log('🔑 Clearing token after failed auth/refresh');
-          setAuthToken(null);
+          
+          // Don't always clear token on 401 - only clear it if we attempted a refresh and it failed
+          // or if this is a retry request (meaning a previous refresh attempt failed)
+          if (isRetry) {
+            console.log('🔑 Clearing token after failed auth/refresh');
+            setAuthToken(null);
+          } else {
+            console.log('🔑 Not clearing token yet, will attempt refresh');
+          }
         }
         
         // Throw with a user-friendly message
