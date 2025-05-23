@@ -1,53 +1,87 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
-import { MainTabParamList } from './types';
-import { Ionicons } from '@expo/vector-icons';
+// src/navigation/MainNavigator.tsx
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-// Import Main Screen components
-import HomeScreen from '../screens/main/HomeScreen';
-import GroupsScreen from '../screens/main/GroupsScreen';
-import FinancesScreen from '../screens/main/FinancesScreen';
-import ProfileScreen from '../screens/main/ProfileScreen';
+// Import screens
+import HomeScreen from "../screens/main/HomeScreen";
+import GroupsScreen from "../screens/main/GroupsScreen";
+import FinancesScreen from "../screens/main/FinancesScreen";
+import ProfileScreen from "../screens/main/ProfileScreen";
+
+// Import types
+import { MainTabParamList } from "./types";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Fixed version of the MainNavigator component
-function MainNavigator() {
+const MainNavigator = () => {
   return (
-    <Tab.Navigator      screenOptions={({ route }) => ({
+    <Tab.Navigator
+      screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2b7a0b',
-        tabBarInactiveTintColor: '#64748b',
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName = '';
-          
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Groups') {
-            iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'Finances') {
-            iconName = focused ? 'wallet' : 'wallet-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          }
-          
-          return <Ionicons name={iconName as any} size={size} color={color} />;
-        },
-        // Use Text components for tab labels to avoid "Text strings must be rendered within a <Text> component" error
-        tabBarLabel: ({ focused, color }) => (
-          <Text style={{ color, fontSize: 10, fontWeight: '500', marginBottom: 3 }}>
-            {route.name}
-          </Text>
-        )
-      })}
+        tabBarStyle: { paddingBottom: 2 },
+        tabBarHideOnKeyboard: true,
+      }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Groups" component={GroupsScreen} />
-      <Tab.Screen name="Finances" component={FinancesScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Ionicons name="home-outline" size={size} color={color} />
+            </View>
+          ),
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Home</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Groups"
+        component={GroupsScreen}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Ionicons name="people-outline" size={size} color={color} />
+            </View>
+          ),
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Groups</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Finances"
+        component={FinancesScreen}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Ionicons name="wallet-outline" size={size} color={color} />
+            </View>
+          ),
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Finances</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Ionicons name="person-outline" size={size} color={color} />
+            </View>
+          ),
+          tabBarLabel: ({color}) => (
+            <Text style={{fontSize: 10, color: "#2b7a0b", marginBottom: 3}}>Profile</Text>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
-}
+};
 
 export default MainNavigator;

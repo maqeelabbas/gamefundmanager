@@ -35,8 +35,14 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.Property<DateTime>("ContributionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("ContributorUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -50,6 +56,10 @@ namespace GameFundManager.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("TransactionReference")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -57,14 +67,13 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("GroupId");
+                    b.HasIndex("ContributorUserId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("GroupId");
 
                     b.ToTable("Contributions");
                 });
@@ -96,6 +105,9 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("PaidByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ReceiptUrl")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -118,6 +130,8 @@ namespace GameFundManager.Infrastructure.Migrations
 
                     b.HasIndex("GroupId");
 
+                    b.HasIndex("PaidByUserId");
+
                     b.ToTable("Expenses");
                 });
 
@@ -135,7 +149,7 @@ namespace GameFundManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)")
-                        .HasDefaultValue("USD");
+                        .HasDefaultValue("EUR");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -179,11 +193,20 @@ namespace GameFundManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ContributionPauseEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ContributionPauseStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("ContributionQuota")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
+
+                    b.Property<DateTime?>("ContributionStartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -196,6 +219,12 @@ namespace GameFundManager.Infrastructure.Migrations
 
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("IsContributionPaused")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -236,9 +265,6 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("GroupId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -259,8 +285,6 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("GroupId");
-
-                    b.HasIndex("GroupId1");
 
                     b.ToTable("Polls");
                 });
@@ -313,16 +337,11 @@ namespace GameFundManager.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PollId");
 
                     b.HasIndex("PollOptionId");
-
-                    b.HasIndex("UserId1");
 
                     b.HasIndex("UserId", "PollId")
                         .IsUnique();
@@ -389,21 +408,29 @@ namespace GameFundManager.Infrastructure.Migrations
 
             modelBuilder.Entity("GameFundManager.Core.Entities.Contribution", b =>
                 {
+                    b.HasOne("GameFundManager.Core.Entities.User", "ContributorUser")
+                        .WithMany("Contributions")
+                        .HasForeignKey("ContributorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameFundManager.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("GameFundManager.Core.Entities.Group", "Group")
                         .WithMany("Contributions")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GameFundManager.Core.Entities.User", "User")
-                        .WithMany("Contributions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("ContributorUser");
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Group");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("GameFundManager.Core.Entities.Expense", b =>
@@ -420,9 +447,17 @@ namespace GameFundManager.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GameFundManager.Core.Entities.User", "PaidByUser")
+                        .WithMany()
+                        .HasForeignKey("PaidByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CreatedByUser");
 
                     b.Navigation("Group");
+
+                    b.Navigation("PaidByUser");
                 });
 
             modelBuilder.Entity("GameFundManager.Core.Entities.Group", b =>
@@ -464,14 +499,10 @@ namespace GameFundManager.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("GameFundManager.Core.Entities.Group", "Group")
-                        .WithMany()
+                        .WithMany("Polls")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("GameFundManager.Core.Entities.Group", null)
-                        .WithMany("Polls")
-                        .HasForeignKey("GroupId1");
 
                     b.Navigation("CreatedByUser");
 
@@ -504,14 +535,10 @@ namespace GameFundManager.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("GameFundManager.Core.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("PollVotes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("GameFundManager.Core.Entities.User", null)
-                        .WithMany("PollVotes")
-                        .HasForeignKey("UserId1");
 
                     b.Navigation("Poll");
 

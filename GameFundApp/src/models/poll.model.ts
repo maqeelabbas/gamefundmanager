@@ -1,17 +1,18 @@
-import { User } from './user.model';
+import { User } from "./user.model";
 
 // Poll type enum matching backend PollType
 export enum PollType {
-  SingleChoice = 'SingleChoice',
-  MultipleChoice = 'MultipleChoice'
+  SingleChoice = "SingleChoice",
+  MultipleChoice = "MultipleChoice",
 }
 
 // Poll option model matching backend PollOptionDto
 export interface PollOption {
   id: string;
   text: string;
+  pollId: string;
   voteCount: number;
-  votePercentage: number;
+  percentage: number; // Renamed from votePercentage to match backend property name
 }
 
 // Poll model matching backend PollDto

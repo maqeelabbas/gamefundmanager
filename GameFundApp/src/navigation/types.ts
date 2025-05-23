@@ -11,7 +11,7 @@ export type AuthStackParamList = {
 // Main Tab Navigator Types
 export type MainTabParamList = {
   Home: undefined;
-  Groups: undefined;
+  Groups: { refresh?: boolean };
   Finances: undefined;
   Profile: undefined;
 };
@@ -19,10 +19,18 @@ export type MainTabParamList = {
 // Root Navigator Types
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;
-  GroupDetails: { groupId: string };
+  Main: NavigatorScreenParams<MainTabParamList>;  
+  GroupDetails: { 
+    groupId: string;
+    expenseAdded?: boolean;
+    expenseAddedAt?: number;
+    contributionAdded?: boolean;
+    contributionAddedAt?: number;
+    initialTab?: string; // Added to support forcing specific tab on navigation
+  };
   AddExpense: { groupId?: string };
   AddContribution: { groupId?: string };
+  AddGroupMember: { groupId: string }; // New screen for adding group members
   CreateGroup: undefined;
   UserDetails: { userId: string };
   ApiDebug: undefined; // Debug screen for API connectivity

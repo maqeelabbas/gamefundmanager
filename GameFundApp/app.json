@@ -17,8 +17,20 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true
+          "NSAllowsLocalNetworking": true,
+          "NSExceptionDomains": {
+            "ngrok-free.app": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
         }
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -26,10 +38,28 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.gamefundmanager.app",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "networkSecurityConfig": {
+        "cleartextTrafficPermitted": true
+      },
+      "permissions": [
+        "INTERNET",
+        "INTERNET"
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "56d2553a-25fc-428d-b59c-3e65db64a3b7"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/56d2553a-25fc-428d-b59c-3e65db64a3b7"
     }
   }
 }

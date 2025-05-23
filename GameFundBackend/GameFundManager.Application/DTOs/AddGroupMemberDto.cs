@@ -1,10 +1,15 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
 namespace GameFundManager.Application.DTOs
 {
     public class AddGroupMemberDto
     {
-        public Guid GroupId { get; set; }
+        [Required]
         public Guid UserId { get; set; }
-        public bool IsAdmin { get; set; }
-        public decimal ContributionQuota { get; set; }
+        
+        public bool IsAdmin { get; set; } = false;
+        
+        public DateTime? ContributionStartDate { get; set; } = DateTime.Now;
     }
 }

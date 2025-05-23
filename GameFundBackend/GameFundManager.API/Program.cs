@@ -9,7 +9,12 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure JSON serialization to use string values for enums
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Add Application and Infrastructure services
 builder.Services.AddApplication();
@@ -64,6 +69,9 @@ builder.Services.AddSwaggerGen(c =>
             Email = "support@gamefundmanager.com"
         }
     });
+    
+    // Use inline definitions for enums
+    c.UseInlineDefinitionsForEnums();
     
     // Add JWT Authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

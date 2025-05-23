@@ -3,7 +3,35 @@ import { ApiResponse } from '../config/api.config';
 import { User } from '../models/user.model';
 import { api } from './api.service'; // Direct import to avoid circular reference
 
+// Define the user search response interface
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  profilePictureUrl?: string;
+}
+
 class UserService {
+  // Search for users by name or email
+  async searchUsers(searchTerm: string, limit: number = 10): Promise<UserSearchResult[]> {
+    try {
+      console.log(`🔍 Searching for users with term: ${searchTerm}`);
+      const response = await api.get<ApiResponse<UserSearchResult[]>>(`/users/search?term=${encodeURIComponent(searchTerm)}&limit=${limit}`);
+      
+      if (response.success && response.data) {
+        console.log(`✅ Found ${response.data.length} users matching "${searchTerm}"`);
+        return response.data;
+      } else {
+        console.error(`❌ User search failed: ${response.message}`);
+        throw new Error(response.message || 'User search failed');
+      }
+    } catch (error: any) {
+      console.error(`❌ User search error:`, error);
+      throw error;
+    }
+  }
+
   // Get all users
   async getAllUsers(): Promise<User[]> {
     try {
@@ -19,6 +47,7 @@ class UserService {
       throw error;
     }
   }
+  
   // Get user by ID
   async getUserById(id: string): Promise<User> {
     try {
@@ -79,7 +108,7 @@ class UserService {
           name: `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim(),
           email: response.data.email,
           phoneNumber: response.data.phoneNumber || '',
-          role: 'player' // Default role
+          role: 'member' // Default role
         };
         
         console.log('Successfully updated user:', result);

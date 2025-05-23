@@ -18,6 +18,9 @@ export interface Group {
   balance: number;
   progressPercentage: number;
   isUserAdmin?: boolean; // Indicates if the current user is an admin for this group
+  contributionDueDay?: number;
+  nextContributionDueDate?: Date;
+  contributionDueDayFormatted?: string;
 }
 
 // Create group request model matching backend CreateGroupDto
@@ -28,6 +31,7 @@ export interface CreateGroupRequest {
   targetAmount: number;
   dueDate?: Date;
   currency: string;
+  contributionDueDay?: number;
 }
 
 // Group member model matching backend GroupMemberDto
@@ -38,14 +42,23 @@ export interface GroupMember {
   isAdmin: boolean;
   contributionQuota: number;
   isActive: boolean;
-  contributionsPaused?: boolean;
+  joinedDate: Date;
   contributionStartDate?: Date;
+  isContributionPaused: boolean;
+  contributionPauseStartDate?: Date;
+  contributionPauseEndDate?: Date;
 }
 
 // Add group member request model matching backend AddGroupMemberDto
 export interface AddGroupMemberRequest {
-  groupId: string;
-  email: string;
+  userId: string;
   isAdmin: boolean;
-  contributionQuota: number;
+  contributionStartDate?: Date;
+}
+
+// Pause member contribution request model matching backend PauseMemberContributionDto
+export interface PauseMemberContributionRequest {
+  memberId: string;
+  pauseStartDate: Date;
+  pauseEndDate: Date;
 }

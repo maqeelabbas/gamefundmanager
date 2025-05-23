@@ -35,12 +35,12 @@ This document summarizes the enhancements made to the GameFundManager React Nati
 - Enhanced MemberList component with:
   - User profile circles with initials
   - Status indicators for active/paused members
-  - Clear role display (Admin/Player)
+  - Clear role display (Admin/Group Admin/Member)
   - Admin options menu for member management
   - Improved spacing and layout
 
 ### Member Management Features
-- Implemented role management (Admin/Player)
+- Implemented role management (Admin/Group Admin/Member)
 - Added contribution start month selection
   - This month / Next month / Custom options
 - Implemented member contribution pausing functionality

@@ -1,7 +1,7 @@
 // src/services/contribution.service.ts
 import { api } from './api.service'; // Direct import to avoid circular reference
 import { ApiResponse } from '../config/api.config';
-import { Contribution, CreateContributionRequest } from '../models/contribution.model';
+import { Contribution, CreateContributionRequest, ContributionStatus } from '../models/contribution.model';
 
 class ContributionService {
   // Get group contributions
@@ -37,6 +37,24 @@ class ContributionService {
       }
     } catch (error) {
       console.error('Get user contributions error:', error);
+      return [];
+    }
+  }
+
+  // Get contributions for a specific user (not just the current user)
+  async getSpecificUserContributions(userId: string): Promise<Contribution[]> {
+    try {
+      const response = await api.get<ApiResponse<Contribution[]>>(`/contributions/user/${userId}`);
+      
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        // Return empty array instead of throwing error
+        console.log(`No contributions found for user ${userId} or error fetching:`, response.message);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Get contributions for user ${userId} error:`, error);
       return [];
     }
   }
@@ -88,13 +106,31 @@ class ContributionService {
       throw error;
     }
   }
+  // Get contributions by status
+  async getContributionsByStatus(groupId: string, status: ContributionStatus): Promise<Contribution[]> {
+    try {
+      const response = await api.get<ApiResponse<Contribution[]>>(
+        `/contributions/group/${groupId}/status/${status}`
+      );
+      
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        // Return empty array instead of throwing error
+        console.log(`No ${status} contributions found or error fetching:`, response.message);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Get ${status} contributions for group ${groupId} error:`, error);
+      return [];
+    }
+  }
 
   // Update contribution status
-  async updateContributionStatus(id: string, status: 'paid' | 'pending'): Promise<Contribution> {
+  async updateContributionStatus(id: string, status: ContributionStatus): Promise<Contribution> {
     try {
-      const response = await api.patch<ApiResponse<Contribution>>(
-        `/contributions/${id}/status`, 
-        { status }
+      const response = await api.put<ApiResponse<Contribution>>(
+        `/contributions/${id}/status/${status}`
       );
       
       if (response.success && response.data) {

@@ -3,6 +3,9 @@ import { ApiResponse } from '../config/api.config';
 import { Group, CreateGroupRequest, GroupMember, AddGroupMemberRequest } from '../models/group.model';
 import { api } from './api.service'; // Direct import to avoid circular reference
 
+// Import the PauseMemberContributionRequest from the models
+import { PauseMemberContributionRequest } from '../models/group.model';
+
 class GroupService {
   // Get all groups
   async getAllGroups(): Promise<Group[]> {
@@ -103,7 +106,7 @@ class GroupService {
     }
   }
 
-  // Add group member
+  // Add group member - updated to match new API endpoint
   async addGroupMember(groupId: string, memberData: AddGroupMemberRequest): Promise<GroupMember> {
     try {
       const response = await api.post<ApiResponse<GroupMember>>(`/groups/${groupId}/members`, memberData);
@@ -118,10 +121,11 @@ class GroupService {
       throw error;
     }
   }
+
   // Remove group member
-  async removeGroupMember(groupId: string, userId: string): Promise<boolean> {
+  async removeGroupMember(groupId: string, memberId: string): Promise<boolean> {
     try {
-      const response = await api.delete<ApiResponse<boolean>>(`/groups/${groupId}/members/${userId}`);
+      const response = await api.delete<ApiResponse<boolean>>(`/groups/${groupId}/members/${memberId}`);
       
       if (response.success) {
         return true;
@@ -153,16 +157,16 @@ class GroupService {
     }
   }
 
-  // Update member role (make admin or regular member)
-  async updateMemberRole(groupId: string, memberId: string, isAdmin: boolean): Promise<GroupMember> {
+  // Update member role (make admin or regular member) - updated to match new API endpoint
+  async updateMemberRole(groupId: string, memberId: string, isAdmin: boolean): Promise<boolean> {
     try {
-      const response = await api.patch<ApiResponse<GroupMember>>(
-        `/groups/${groupId}/members/${memberId}/role`, 
-        { isAdmin }
+      const response = await api.patch<ApiResponse<boolean>>(
+        `/groups/${groupId}/members/${memberId}/role?isAdmin=${isAdmin}`, 
+        {}
       );
       
-      if (response.success && response.data) {
-        return response.data;
+      if (response.success) {
+        return true;
       } else {
         throw new Error(response.message || 'Failed to update member role');
       }
@@ -210,6 +214,44 @@ class GroupService {
     }
   }
 
+  // Pause member contribution - new function matching API endpoint
+  async pauseMemberContribution(groupId: string, pauseData: PauseMemberContributionRequest): Promise<boolean> {
+    try {
+      const response = await api.post<ApiResponse<boolean>>(
+        `/groups/${groupId}/members/pause-contribution`, 
+        pauseData
+      );
+      
+      if (response.success) {
+        return true;
+      } else {
+        throw new Error(response.message || 'Failed to pause member contribution');
+      }
+    } catch (error) {
+      console.error(`Pause member contribution error:`, error);
+      throw error;
+    }
+  }
+
+  // Resume member contribution - new function matching API endpoint
+  async resumeMemberContribution(groupId: string, memberId: string): Promise<boolean> {
+    try {
+      const response = await api.post<ApiResponse<boolean>>(
+        `/groups/${groupId}/members/${memberId}/resume-contribution`,
+        {}
+      );
+      
+      if (response.success) {
+        return true;
+      } else {
+        throw new Error(response.message || 'Failed to resume member contribution');
+      }
+    } catch (error) {
+      console.error(`Resume member contribution error:`, error);
+      throw error;
+    }
+  }
+
   // Remove a member from the group
   async removeMember(groupId: string, memberId: string): Promise<boolean> {
     try {
@@ -222,9 +264,11 @@ class GroupService {
       } else {
         throw new Error(response.message || 'Failed to remove member from group');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Remove member error:`, error);
-      throw error;
+      // Format the error message for better user experience
+      const errorMessage = error.message || 'Failed to remove member from group';
+      throw new Error(errorMessage);
     }
   }
 }

@@ -1,12 +1,12 @@
 using GameFundManager.Application.Common;
 using GameFundManager.Application.DTOs;
 
-namespace GameFundManager.Application.Interfaces
+namespace GameFundManager.Application.Interfaces;
+
+public interface IUserService
 {
-    public interface IUserService
-    {
-        Task<ApiResponse<IEnumerable<UserDto>>> GetAllUsersAsync();
-        Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid id);
-        Task<ApiResponse<UserDto>> UpdateUserAsync(Guid id, UserDto userDto);
-    }
+    Task<ApiResponse<IEnumerable<UserDto>>> GetAllUsersAsync();
+    Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid id);
+    Task<ApiResponse<UserDto>> UpdateUserAsync(Guid id, UserDto userDto);
+    Task<ApiResponse<IEnumerable<UserSearchResponseDto>>> SearchUsersAsync(string searchTerm, int maxResults = 10);
 }

@@ -15,26 +15,15 @@ declare global {
 export const createInsecureFetch = () => {
   // Store the original fetch
   global.originalFetch = global.fetch;
-  
-  // Replace with our development-friendly implementation
+    // Replace with our development-friendly implementation
   global.fetch = async (url: RequestInfo | URL, options: RequestInit = {}) => {
     try {
-      // For development only, convert HTTPS to HTTP to avoid certificate validation issues
+      // URL conversion no longer needed since we're using HTTP directly in API_CONFIG
       let urlString = url.toString();
-      if (urlString.startsWith('https:') && __DEV__) {
-        console.log(`⚠️ Converting HTTPS to HTTP in development mode`);
-        urlString = urlString.replace('https:', 'http:');
-        
-        // If port is 443 or 8086 (HTTPS), change to 80 or 8085 (HTTP)
-        urlString = urlString.replace(':443', ':80');
-        urlString = urlString.replace(':8086', ':8085');
-        
-        console.log(`🔄 ${url} -> ${urlString}`);
-        url = urlString;
-      }
       
-      // In development, we're using HTTP instead of trying to bypass SSL certificates
-      console.log(`🌐 Fetching: ${url.toString()}`);
+      // Log the URL but don't modify it
+      console.log(`🌐 Fetching: ${urlString}`);
+      
       if (global.originalFetch) {
         return global.originalFetch(url, options);
       } else {
@@ -50,7 +39,7 @@ export const createInsecureFetch = () => {
     }
   };
   
-  console.log('⚠️ Development only: HTTPS to HTTP conversion enabled');
+  console.log('⚠️ Network security configuration applied');
 };
 
 /**

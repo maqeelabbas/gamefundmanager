@@ -1,25 +1,14 @@
 // src/services/api.service.ts
 import { API_CONFIG, ApiResponse } from '../config/api.config';
-import { tokenService } from './token.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setAuthToken, getAuthToken } from './http.service';
+import { tokenService } from './token.service';
 
-// Base URL for API calls
+// Re-export the token functions from http service
+export { setAuthToken, getAuthToken };
+
+// Import API base URL
 const API_BASE_URL = API_CONFIG.BASE_URL;
-
-// Store the auth token
-let authToken: string | null = null;
-
-// Set the auth token for API calls
-export const setAuthToken = (token: string | null) => {
-  console.log(`🔑 ${token ? 'Setting' : 'Clearing'} auth token: ${token ? `${token.substring(0, 15)}...` : 'null'}`);
-  authToken = token;
-};
-
-// Get the current auth token
-export const getAuthToken = () => {
-  console.log(`🔑 Current auth token: ${authToken ? `${authToken.substring(0, 15)}... (${authToken.length} chars)` : 'null'}`);
-  return authToken;
-};
 
 // Create default headers for API requests
 const getHeaders = () => {
@@ -27,8 +16,9 @@ const getHeaders = () => {
     'Content-Type': 'application/json',
   };
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   return headers;
@@ -137,20 +127,55 @@ const apiCall = async <T>(
       if (apiCallCounters.total > MAX_API_CALLS.total) {
         throw new Error(`API call limit exceeded. Too many ${endpointType} requests (${apiCallCounters[endpointType as keyof typeof apiCallCounters]}/${MAX_API_CALLS[endpointType as keyof typeof MAX_API_CALLS]}).`);
       }
-    }
-    
-    // Skip token validation for auth endpoints
+    }      // Skip token validation for auth endpoints
     const isAuthEndpoint = endpoint.includes('/auth/login') || 
                            endpoint.includes('/auth/register') ||
                            endpoint.includes('/auth/healthcheck') ||
                            endpoint.includes('/auth/refresh-token');
     
     // For authenticated endpoints, validate token first
-    if (authToken && !isAuthEndpoint && !isRetry) {
+    let currentToken = getAuthToken();
+    
+    // First, ensure we have a token loaded from storage
+    if (!currentToken && !isAuthEndpoint) {
+      try {
+        // This might be a cold start where token hasn't been initialized yet
+        const storedToken = await AsyncStorage.getItem('@GameFund:token');
+        if (storedToken) {
+          console.log('🔑 Found stored token, setting it before request');
+          
+          // Basic token validation check
+          if (!storedToken.includes('.') || storedToken.split('.').length !== 3) {
+            console.warn('🔑 Stored token appears invalid (not in JWT format), clearing it');
+            await AsyncStorage.removeItem('@GameFund:token');
+            
+            // Trigger auth failure
+            AsyncStorage.setItem('@GameFund:authFailure', Date.now().toString())
+              .catch(err => console.error('Failed to trigger auth failure event:', err));
+            
+            throw new Error('Invalid token format');
+          }
+          
+          setAuthToken(storedToken);
+          currentToken = storedToken;
+        } else {
+          console.log('🔑 No valid token available for request');
+        }
+      } catch (error) {
+        console.error('Error retrieving stored token:', error);
+      }
+    }
+    
+    if (currentToken && !isAuthEndpoint && !isRetry) {
       try {
         // Check if token needs refreshing and refresh if needed
         // But only do this for original requests, not for retries to prevent loops
-        await tokenService.ensureValidToken();
+        console.log('🔑 Ensuring token is valid before request');
+        const isExpired = await tokenService.isTokenExpired();
+        if (isExpired) {
+          console.log('🔄 Token expired or about to expire, refreshing...');
+          await tokenService.refreshToken();
+        }
       } catch (tokenError) {
         console.warn('🔑 Token validation failed, proceeding with request anyway:', tokenError);
       }
@@ -197,48 +222,99 @@ const apiCall = async <T>(
       clearTimeout(timeoutId); // Clear timeout on success
       
       console.log('✅ Fetch completed with status:', response.status);
-      console.log('📄 Response headers:', JSON.stringify(Object.fromEntries([...response.headers.entries()]), null, 2));      // Handle error responses
+      console.log('📄 Response headers:', JSON.stringify(Object.fromEntries([...response.headers.entries()]), null, 2));        // Handle error responses
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ API Error (${response.status}):`, errorText || 'No error text');
-          // Special handling for authentication errors
+        let errorText = '';
+        let errorMessage = '';
+        try {
+          errorText = await response.text();
+          console.error(`❌ API Error (${response.status}):`, errorText || 'No error text');
+          
+          // Try to parse as JSON for better error handling
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText);
+              console.error('📄 Error details:', JSON.stringify(errorJson, null, 2));
+              
+              // Extract a user-friendly message from the error JSON
+              if (errorJson.message) {
+                errorMessage = errorJson.message;
+              } else if (errorJson.errors && typeof errorJson.errors === 'object') {
+                // Handle validation errors
+                errorMessage = Object.values(errorJson.errors).flat().join('. ');
+              }
+            } catch (e) {
+              // Not JSON, just leave as text
+              errorMessage = errorText;
+            }
+          }
+        } catch (e) {
+          console.error('❌ Failed to read error response:', e);
+        }
+        
+        // Special handling for authentication errors
         if (response.status === 401) {
           console.error('🔑 Authentication error - token may be invalid or expired');
+          console.log('🔑 Current token state:', getAuthToken() ? 'Present' : 'Missing');
           
           // Only attempt token refresh if this isn't already a retry request to prevent loops
           if (!isRetry) {
             try {
               const endpointKey = `${method}:${endpoint}`;
               const retryCount = retryCounters.get(endpointKey) || 0;
+              console.log(`🔄 Retry count for ${endpointKey}: ${retryCount}`);
               
               // Limit retries to 1 per endpoint within a reset interval
               if (retryCount < 1) {
                 // Track this retry attempt
                 retryCounters.set(endpointKey, retryCount + 1);
+                console.log('🔄 Attempting token refresh before retry');
                 
                 // Try to refresh the token
                 const refreshed = await tokenService.refreshToken();
                 if (refreshed) {
-                  console.log('🔄 Token refreshed successfully, retrying the request');
+                  console.log('🔄 Token refreshed successfully, retrying the original request');
                   // Retry the original request with the new token, but mark as a retry
                   return await apiCall<T>(endpoint, method, data, customHeaders, true);
+                } else {
+                  // If refresh explicitly failed (returned false), we need to handle authentication failure
+                  console.error('🔑 Token refresh failed, user needs to log in again');
+                  
+                  // Clear the token as it's invalid
+                  setAuthToken(null);
+                  
+                  // Publish an event that the auth context can listen for using AsyncStorage
+                  // This is a workaround since we can't use document events in React Native
+                  console.log('🔑 Triggering auth failure event');
+                  AsyncStorage.setItem('@GameFund:authFailure', Date.now().toString())
+                    .then(() => console.log('✅ Auth failure event triggered'))
+                    .catch(err => console.error('❌ Failed to trigger auth failure event:', err));
                 }
               } else {
                 console.warn(`🔄 Skipping retry for ${endpoint} - already retried ${retryCount} times`);
               }
             } catch (refreshError) {
-              console.error('🔑 Failed to refresh token:', refreshError);
-            }
-          } else {
+              console.error('🔑 Failed to refresh token:', refreshError instanceof Error ? refreshError.message : refreshError);
+              
+              // Clear the token on unrecoverable errors
+              console.log('🔑 Clearing token due to refresh error');
+              setAuthToken(null);
+            }          } else {
             console.warn('🔄 Not attempting token refresh on retry request to prevent loops');
           }
           
-          // If we get here, token refresh failed or wasn't possible
-          // Clear the token as it's likely invalid
-          setAuthToken(null);
+          // Don't always clear token on 401 - only clear it if we attempted a refresh and it failed
+          // or if this is a retry request (meaning a previous refresh attempt failed)
+          if (isRetry) {
+            console.log('🔑 Clearing token after failed auth/refresh');
+            setAuthToken(null);
+          } else {
+            console.log('🔑 Not clearing token yet, will attempt refresh');
+          }
         }
         
-        throw new Error(errorText || `API call failed with status: ${response.status}`);
+        // Throw with a user-friendly message
+        throw new Error(errorMessage || errorText || `API call failed with status: ${response.status}`);
       }
 
       // Parse the response as JSON

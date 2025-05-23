@@ -1,7 +1,7 @@
 // This file combines the original UI with the React Hook order fixes 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -21,6 +21,7 @@ import { contributionService } from '../../services/contribution.service';
 import { pollService } from '../../services/poll.service';
 import { RootStackParamList } from '../../navigation/types';
 import { CreateGroupRequest } from '../../models';
+import { EditGroupForm } from '../../components';
 
 // Import tab components
 import {
@@ -71,6 +72,63 @@ const GroupDetailsScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [groupForm, setGroupForm] = useState<Partial<CreateGroupRequest>>({});
   
+  // Expense and Contribution updates from navigation params
+  const { expenseAdded, expenseAddedAt, contributionAdded, contributionAddedAt } = route.params || {};
+  
+  // Track the last processed timestamps to prevent duplicate refreshes
+  const [lastProcessedExpenseTimestamp, setLastProcessedExpenseTimestamp] = useState<number | undefined>(undefined);
+  const [lastProcessedContributionTimestamp, setLastProcessedContributionTimestamp] = useState<number | undefined>(undefined);
+
+  // Watch route params to refresh data when returning from add screens with success
+  useEffect(() => {
+    if (expenseAdded && expenseAddedAt && expenseAddedAt !== lastProcessedExpenseTimestamp) {
+      console.log('Expense added, refreshing expense data...', expenseAddedAt);
+      // Force refresh group data regardless of tab
+      fetchGroup();
+      
+      // Always refresh expense data when an expense is added
+      fetchExpenses();
+      
+      // Also refresh contributions data to keep the summary view consistent
+      fetchContributions();
+      
+      // Mark this expense addition as processed
+      setLastProcessedExpenseTimestamp(expenseAddedAt);
+      
+      // Reset the loaded flags to ensure fresh data on tab selection
+      setExpensesLoaded(false);
+      setContributionsLoaded(false);
+      
+      // Switch to expenses tab to show the newly added expense
+      setActiveTab("expenses");
+      
+      console.log('Expense data refresh complete and switched to expenses tab');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseAdded, expenseAddedAt, lastProcessedExpenseTimestamp]);
+  useEffect(() => {
+    if (contributionAdded && contributionAddedAt && contributionAddedAt !== lastProcessedContributionTimestamp) {
+      console.log('Contribution added, refreshing contribution data...', contributionAddedAt);
+      // Force refresh group data regardless of tab
+      fetchGroup();
+      
+      // Always refresh contribution data when a contribution is added
+      fetchContributions();
+      
+      // Mark this contribution addition as processed
+      setLastProcessedContributionTimestamp(contributionAddedAt);
+      
+      // Reset the loaded flags to ensure fresh data on tab selection
+      setContributionsLoaded(false);
+      
+      // Switch to contributions tab to show the newly added contribution
+      setActiveTab("contributions");
+      
+      console.log('Contribution data refresh complete and switched to contributions tab');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contributionAdded, contributionAddedAt, lastProcessedContributionTimestamp]);
+
   // API hooks for group data - always initialize regardless of which tab is active
   const { 
     data: group, 
@@ -78,6 +136,18 @@ const GroupDetailsScreen: React.FC = () => {
     error: groupError,
     execute: fetchGroup
   } = useApi(() => groupService.getGroupById(groupId), true);
+
+  // Debug log for group data
+  useEffect(() => {
+    if (group) {
+      console.log('GroupDetailsScreen - Group data:', {
+        id: group.id,
+        name: group.name,
+        isUserAdmin: group.isUserAdmin,
+        memberCount: group.memberCount
+      });
+    }
+  }, [group]);
 
   // Members data
   const {
@@ -94,8 +164,7 @@ const GroupDetailsScreen: React.FC = () => {
     error: expensesError,
     execute: fetchExpenses
   } = useApi(() => expenseService.getGroupExpenses(groupId), false);
-  
-  // Contributions data
+    // Contributions data
   const {
     data: contributions,
     loading: loadingContributions,
@@ -125,24 +194,40 @@ const GroupDetailsScreen: React.FC = () => {
     execute: leaveGroupAPI
   } = useApi(() => 
     groupService.removeGroupMember(groupId, user?.id || ''), false);
-  
-  // Initialize form data when group is loaded
+    // Initialize form data when group is loaded
   useEffect(() => {
     if (group) {
       setGroupForm({
         name: group.name,
         description: group.description,
         targetAmount: group.targetAmount,
-        currency: group.currency
+        currency: group.currency,
+        contributionDueDay: group.contributionDueDay
       });
-    }  }, [group]);
-    // Load data for the active tab when it changes - with data already loaded tracking
+    }
+  }, [group]);
+
+  // Initial data loading - load expenses and contributions on component mount regardless of tab
+  useEffect(() => {
+    // Fetch initial data for summary tab on component mount
+    if (groupId) {
+      console.log('Initial data loading for summary tab');
+      fetchExpenses();
+      fetchContributions();
+      
+      // Mark them as loaded so the tab change effect doesn't reload them unnecessarily
+      setExpensesLoaded(true);
+      setContributionsLoaded(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
+  
+  // Load data for the active tab when it changes - with data already loaded tracking
   const [membersLoaded, setMembersLoaded] = useState(false);
   const [expensesLoaded, setExpensesLoaded] = useState(false);
   const [contributionsLoaded, setContributionsLoaded] = useState(false);
   const [pollsLoaded, setPollsLoaded] = useState(false);
-  
-  // Load data for the active tab when it changes
+    // Load data for the active tab when it changes
   useEffect(() => {
     // This ensures we fetch data only once per tab selection
     if (activeTab === "members" && !membersLoaded) {
@@ -158,11 +243,45 @@ const GroupDetailsScreen: React.FC = () => {
       fetchPolls();
       setPollsLoaded(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeTab,
-    fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
+    // Removed fetch functions from dependencies to prevent infinite loops
     membersLoaded, expensesLoaded, contributionsLoaded, pollsLoaded
   ]);
+  // Refresh active tab data when screen receives focus (e.g., coming back from Add Expense screen)  
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Screen focused - ensuring data is refreshed for tab:', activeTab);
+      
+      // Always refresh group data to ensure totals are up-to-date
+      fetchGroup();
+      console.log('Refreshing group summary data');
+      
+      // Refresh data for the active tab
+      if (activeTab === "expenses") {
+        console.log('Refreshing expenses after screen focus');
+        fetchExpenses();
+        // Reset loaded flag to allow fresh data retrieval
+        setExpensesLoaded(false);
+      } else if (activeTab === "contributions") {
+        console.log('Refreshing contributions after screen focus');
+        fetchContributions();
+        setContributionsLoaded(false);
+      } else if (activeTab === "members") {
+        console.log('Refreshing members after screen focus');
+        fetchMembers();
+        setMembersLoaded(false);
+      } else if (activeTab === "polls") {
+        console.log('Refreshing polls after screen focus');
+        fetchPolls();
+        setPollsLoaded(false);
+      }
+      
+      console.log('Screen focus data refresh complete');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab])
+  );
     // Helper function to refresh current tab data
   const refreshCurrentTabData = useCallback(() => {
     switch (activeTab) {
@@ -189,9 +308,10 @@ const GroupDetailsScreen: React.FC = () => {
       default:
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    activeTab, fetchGroup, fetchMembers, fetchExpenses, fetchContributions, fetchPolls,
-    setMembersLoaded, setExpensesLoaded, setContributionsLoaded, setPollsLoaded
+    activeTab
+    // Removed fetch functions and setState functions from dependencies to prevent potential infinite loops
   ]);
   
   // Handle pull-to-refresh
@@ -200,8 +320,7 @@ const GroupDetailsScreen: React.FC = () => {
     await refreshCurrentTabData();
     setRefreshing(false);
   }, [refreshCurrentTabData]);
-  
-  // Calculate financial info
+    // Calculate financial info
   const getTotalContributions = () => {
     return group?.totalContributions || 0;
   };
@@ -227,21 +346,26 @@ const GroupDetailsScreen: React.FC = () => {
           name: group.name,
           description: group.description,
           targetAmount: group.targetAmount,
-          currency: group.currency
+          currency: group.currency,
+          contributionDueDay: group.contributionDueDay
         });
       }
     }
     setIsEditing(!isEditing);
   };
-  
-  const handleGroupUpdate = async () => {
+    const handleGroupUpdate = async (updatedGroupData?: Partial<CreateGroupRequest>) => {
     try {
-      if (!groupForm.name) {
+      // Use the provided data or fall back to groupForm state
+      const dataToSubmit = updatedGroupData || groupForm;
+      
+      console.log('Updating group with data:', dataToSubmit);
+      
+      if (!dataToSubmit.name) {
         Alert.alert("Validation Error", "Group name is required");
         return;
       }
       
-      const updatedGroup = await updateGroup(groupForm);
+      const updatedGroup = await updateGroup(dataToSubmit);
       
       if (updatedGroup) {
         setIsEditing(false);
@@ -259,16 +383,28 @@ const GroupDetailsScreen: React.FC = () => {
       "Are you sure you want to leave this group? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: async () => {
+        {          text: "Leave",
+          style: "destructive",          onPress: async () => {
             try {
               await leaveGroupAPI();
               Alert.alert("Success", "You have left the group");
-              navigation.goBack();
+              // Navigate back to the main tab with the Groups screen
+              navigation.navigate("Main", { screen: "Groups", params: { refresh: true } });
             } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to leave group");
+              // Format the error message to be more user-friendly
+              let errorMessage = "Failed to leave group";
+              
+              if (error.message) {
+                // Clean up any JSON or technical details from the error message
+                const cleanMessage = error.message
+                  .replace(/[{}[\]"]/g, '') // Remove JSON syntax
+                  .replace(/^\s*error:\s*/i, '') // Remove "Error:" prefix
+                  .trim();
+                
+                errorMessage = cleanMessage;
+              }
+              
+              Alert.alert("Error", errorMessage);
             }
           }
         }
@@ -279,11 +415,23 @@ const GroupDetailsScreen: React.FC = () => {
   // Render functions for different tabs
   // All these functions are defined regardless of the active tab to 
   // ensure consistent hook execution order
-    // Content for the active tab
   // Content for the active tab
   const renderTabContent = () => {
     switch (activeTab) {
       case "summary":
+        // If in editing mode, show the EditGroupForm
+        if (isEditing && group) {
+          return (
+            <EditGroupForm
+              group={group}
+              isLoading={updateLoading} 
+              onSave={handleGroupUpdate}
+              onCancel={handleEditToggle}
+            />
+          );
+        }
+        
+        // Otherwise show the regular summary tab
         return (
           <SummaryTab
             groupId={groupId}

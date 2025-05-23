@@ -1,5 +1,5 @@
 // src/screens/main/GroupsScreen.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { ListRenderItem, ActivityIndicator } from "react-native";
 import {
@@ -9,7 +9,7 @@ import {
   StyledFlatList,
   StyledTouchableOpacity
 } from "../../utils/StyledComponents";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { groupService } from '../../services';
@@ -21,17 +21,33 @@ type GroupsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const GroupsScreen: React.FC = () => {
   const navigation = useNavigation<GroupsScreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Use our custom hook to fetch groups
+    // Use our custom hook to fetch groups but don't execute immediately
+  // We'll use useFocusEffect instead to control when it fetches
   const { 
     data: groups,
     loading,
     error,
     execute: fetchGroups
-  } = useApi(() => groupService.getUserGroups(), true);
+  } = useApi(() => groupService.getUserGroups(), false); // Changed to false to prevent auto-fetch
   
-  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
-  // Update filtered groups when groups change - using a different approach
+  // Use useFocusEffect to fetch groups only when screen is focused
+  // This prevents multiple fetches during navigation
+  useFocusEffect(
+    useCallback(() => {
+      console.log('GroupsScreen focused - refreshing groups list');
+      // Add a short delay to prevent multiple rapid calls during navigation
+      const timer = setTimeout(() => {
+        fetchGroups();
+      }, 300);
+      
+      return () => {
+        // Clean up timer when screen loses focus
+        clearTimeout(timer);
+      };
+    }, []) // Remove fetchGroups from dependencies to prevent loop
+  );
+  
+  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);  // Update filtered groups when groups change - using a different approach
   useEffect(() => {
     if (groups) {
       if (!filteredGroups.length || searchQuery === '') {
@@ -46,7 +62,7 @@ const GroupsScreen: React.FC = () => {
         setFilteredGroups(filtered);
       }
     }
-  }, [groups]);
+  }, [groups, searchQuery]);
   
   const handleSearch = (text: string) => {
     setSearchQuery(text);
@@ -59,23 +75,23 @@ const GroupsScreen: React.FC = () => {
       setFilteredGroups(groups);
     }
   };
-  
-  const renderGroupItem: ListRenderItem<Group> = ({ item }) => (
+    const renderGroupItem: ListRenderItem<Group> = ({ item }) => (
     <StyledTouchableOpacity onPress={() => navigation.navigate('GroupDetails', { groupId: item.id })}>
       <StyledView className="bg-white p-4 rounded-xl shadow-sm mb-3">
-        <StyledView className="flex-row justify-between">
-          <StyledText className="text-text font-bold">{item.name}</StyledText>
-          <StyledText className="text-primary font-bold">
-            {item.currency}{item.balance}
-          </StyledText>
-        </StyledView>
-        <StyledView className="flex-row justify-between mt-2">
-          <StyledText className="text-text text-xs">
-            {item.memberCount} members • {item.description}
-          </StyledText>
-          <StyledText className="text-text text-xs">
-            Tap to view details
-          </StyledText>
+        <StyledView className="flex-row justify-between items-start">
+          <StyledView className="flex-1 mr-3">
+            <StyledText className="text-text font-bold" numberOfLines={1} ellipsizeMode="tail">
+              {item.name}
+            </StyledText>
+            <StyledText className="text-text text-xs mt-2" numberOfLines={2} ellipsizeMode="tail">
+              {item.memberCount} members • {item.description}
+            </StyledText>
+          </StyledView>
+          <StyledView className="items-end justify-start">
+            <StyledText className="text-primary font-bold whitespace-nowrap">
+              {item.currency}{item.balance}
+            </StyledText>
+          </StyledView>
         </StyledView>
       </StyledView>
     </StyledTouchableOpacity>
@@ -116,8 +132,7 @@ const GroupsScreen: React.FC = () => {
           </StyledTouchableOpacity>
         </StyledView>
       </StyledView>
-      
-      {loading && !groups ? (
+        {loading && !groups ? (
         <StyledView className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#0000ff" />
           <StyledText className="mt-2 text-text">Loading groups...</StyledText>
@@ -133,12 +148,15 @@ const GroupsScreen: React.FC = () => {
             <StyledText className="text-white font-medium">Try Again</StyledText>
           </StyledTouchableOpacity>
         </StyledView>      ) : (
-        <StyledFlatList
+        <StyledFlatList 
           data={filteredGroups as any}
           keyExtractor={(item: any) => item.id}
           renderItem={renderGroupItem as any}
           contentContainerStyle={{ padding: 16 }}
-          onRefresh={fetchGroups}
+          onRefresh={() => {
+            console.log("Manual refresh triggered");
+            fetchGroups();
+          }}
           refreshing={loading}
           ListEmptyComponent={
             <StyledView className="justify-center items-center p-4">

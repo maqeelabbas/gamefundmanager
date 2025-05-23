@@ -1,11 +1,11 @@
 using GameFundManager.Core.Entities;
 
-namespace GameFundManager.Core.Interfaces
+namespace GameFundManager.Core.Interfaces;
+
+public interface IUserRepository : IRepository<User>
 {
-    public interface IUserRepository : IRepository<User>
-    {
-        Task<User?> GetByEmailAsync(string email);
-        Task<User?> GetByUsernameAsync(string username);
-        Task<IEnumerable<Group>> GetUserGroupsAsync(Guid userId);
-    }
+    Task<User?> GetByEmailAsync(string email);
+    Task<User?> GetByUsernameAsync(string username);
+    Task<IEnumerable<Group>> GetUserGroupsAsync(Guid userId);
+    Task<IEnumerable<User>> SearchUsersAsync(string searchTerm, int maxResults = 10);
 }

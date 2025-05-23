@@ -3,21 +3,22 @@ import { api } from './api.service'; // Direct import to avoid circular referenc
 import { ApiResponse } from '../config/api.config';
 import { Expense, ExpenseStatus, CreateExpenseRequest } from '../models/expense.model';
 
-class ExpenseService {
-  // Get group expenses
+class ExpenseService {  // Get group expenses
   async getGroupExpenses(groupId: string): Promise<Expense[]> {
     try {
+      console.log(`Expense service: Fetching expenses for group ${groupId}`);
       const response = await api.get<ApiResponse<Expense[]>>(`/expenses/group/${groupId}`);
       
       if (response.success && response.data) {
+        console.log(`Expense service: Found ${response.data.length} expenses for group ${groupId}`);
         return response.data;
       } else {
         // Return empty array instead of throwing error
-        console.log('No expenses found or error fetching expenses:', response.message);
+        console.log('Expense service: No expenses found or error fetching expenses:', response.message);
         return [];
       }
     } catch (error) {
-      console.error(`Get expenses for group ${groupId} error:`, error);
+      console.error(`Expense service: Get expenses for group ${groupId} error:`, error);
       // Return empty array for easier handling in UI
       return [];
     }
@@ -57,18 +58,42 @@ class ExpenseService {
     }
   }
 
+  // Get all expenses paid by a specific user
+  async getUserExpenses(userId: string): Promise<Expense[]> {
+    try {
+      console.log(`Expense service: Fetching expenses paid by user ${userId}`);
+      const response = await api.get<ApiResponse<Expense[]>>(`/expenses/user/${userId}`);
+      
+      if (response.success && response.data) {
+        console.log(`Expense service: Found ${response.data.length} expenses paid by user ${userId}`);
+        return response.data;
+      } else {
+        // Return empty array instead of throwing error
+        console.log(`Expense service: No expenses found for user ${userId} or error fetching:`, response.message);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Expense service: Get expenses for user ${userId} error:`, error);
+      return [];
+    }
+  }
+
   // Create a new expense
   async createExpense(expenseData: CreateExpenseRequest): Promise<Expense> {
     try {
+      console.log('Expense service: Sending data to API:', JSON.stringify(expenseData, null, 2));
       const response = await api.post<ApiResponse<Expense>>('/expenses', expenseData);
+      console.log('Expense service: API response received:', JSON.stringify(response, null, 2));
       
       if (response.success && response.data) {
+        console.log('Expense service: Successfully created expense with ID:', response.data.id);
         return response.data;
       } else {
-        throw new Error(response.message || 'Failed to create expense');
+        console.error('Expense service: API returned success=false or no data:', response);
+        throw new Error(response.message || 'Failed to create expense - API returned success=false');
       }
     } catch (error) {
-      console.error('Create expense error:', error);
+      console.error('Expense service: Create expense error:', error);
       throw error;
     }
   }
