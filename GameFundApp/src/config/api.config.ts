@@ -6,11 +6,11 @@ export const API_CONFIG = {
   // For iOS simulator, use 'localhost'
   // For Android emulator, use '10.0.2.2'
   // For physical devices, use the computer's local network IP
-  // IMPORTANT: Using HTTP instead of HTTPS to avoid certificate validation issues in development
+  // Using HTTP for development to avoid certificate validation issues
   BASE_URL: Platform.select({
-    ios: 'https://8f3f-2001-a62-4d8-d101-f9b1-707d-fa9b-e55a.ngrok-free.app/api', // Use localhost for iOS simulator
-    android: 'https://8f3f-2001-a62-4d8-d101-f9b1-707d-fa9b-e55a.ngrok-free.app/api', // Special IP for Android emulator
-    default: 'https://8f3f-2001-a62-4d8-d101-f9b1-707d-fa9b-e55a.ngrok-free.app/api', // Fallback to local network IP
+    ios: 'https://gamefundapi.vicbts.com/api', // Use localhost for iOS simulator
+    android: 'https://gamefundapi.vicbts.com/api', // Special IP for Android emulator
+    default: 'https://gamefundapi.vicbts.com/api', // Fallback to local network IP
   }),
   
   // Alternative configurations (uncomment and modify as needed):

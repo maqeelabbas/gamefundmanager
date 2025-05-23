@@ -26,15 +26,10 @@ export const makeDirectRefreshRequest = async (token: string): Promise<{ success
       mode: 'cors',
       cache: 'no-cache',
       credentials: 'include'
-    };
-
-    // Process URL for development environment
+    };    // Process URL for development environment
     let processedUrl = url;
-    if (__DEV__ && processedUrl.startsWith('https://')) {
-      console.log('⚠️ Converting HTTPS to HTTP in development mode');
-      processedUrl = processedUrl.replace('https://', 'http://');
-      console.log('🔄', url, '->', processedUrl);
-    }
+    
+    // No need to convert HTTPS to HTTP since we're now using HTTP in api.config.ts
 
     // Make the request
     console.log('🌐 Fetching:', processedUrl);

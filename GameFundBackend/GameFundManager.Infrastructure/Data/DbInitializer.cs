@@ -38,11 +38,11 @@ public static class DbInitializer
             var adminUser = new User
             {
                 Id = Guid.NewGuid(),
-                Username = "admin",
-                Email = "admin@gamefund.com",
+                Username = "aqeel",
+                Email = "linktoaqeel@gmail.com",
                 FirstName = "Aqeel",
                 LastName = "Baloch",
-                PasswordHash = CreatePasswordHash("123"),
+                PasswordHash = CreatePasswordHash("aqeel123"),
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -53,10 +53,10 @@ public static class DbInitializer
             {
                 Id = Guid.NewGuid(),
                 Username = "javed",
-                Email = "javed@gamefund.com",
+                Email = "javed28iqbal@gmail.com",
                 FirstName = "Javed",
                 LastName = "Iqbal",
-                PasswordHash = CreatePasswordHash("123"),
+                PasswordHash = CreatePasswordHash("javed123"),
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -65,10 +65,10 @@ public static class DbInitializer
             {
                 Id = Guid.NewGuid(),
                 Username = "furqan",
-                Email = "furgan@gamefund.com",
+                Email = "furgan@gmail.com",
                 FirstName = "Furqan",
                 LastName = "Yousaf",
-                PasswordHash = CreatePasswordHash("123"),
+                PasswordHash = CreatePasswordHash("furqan123"),
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };

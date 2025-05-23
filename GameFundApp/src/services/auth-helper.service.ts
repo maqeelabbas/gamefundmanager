@@ -54,7 +54,6 @@ export const authFetch = async <T>(
   if (token) {
     requestHeaders['Authorization'] = `Bearer ${token}`;
   }
-
   // Set up request options
   const options: RequestInit = {
     method,
@@ -62,13 +61,8 @@ export const authFetch = async <T>(
     body: body ? JSON.stringify(body) : undefined
   };
 
-  // Convert HTTPS to HTTP in dev mode if needed
+  // URLs are now directly configured for HTTP in api.config.ts
   let processedUrl = url;
-  if (__DEV__ && processedUrl.startsWith('https://')) {
-    console.log('⚠️ Converting HTTPS to HTTP in development mode');
-    processedUrl = processedUrl.replace('https://', 'http://');
-    console.log('🔄', url, '->', processedUrl);
-  }
 
   // Make the request
   console.log(`🌐 Auth fetch:`, method, processedUrl);
